@@ -1,0 +1,297 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Eisenhower-Matrix</title>
+<meta name="theme-color" content="#f4f4f5" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<style>
+  :root {
+    --bg: #f4f4f5; --card: #ffffff; --line: #e4e4e7;
+    --ink: #18181b; --muted: #71717a; --faint: #a1a1aa;
+    --emerald: #10b981; --emerald-dark: #059669; --rose: #f43f5e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1024px; margin: 0 auto; padding: 24px 16px; }
+  .top { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+  @media (min-width: 640px) { .top { flex-direction: row; align-items: flex-end; justify-content: space-between; } }
+  h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+  .sub { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
+  .toggle { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .toggle button { border: 0; background: transparent; color: var(--muted); font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .toggle button.active { background: #18181b; color: #fff; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .quad { border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; min-height: 224px; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: background .15s, border-color .15s; }
+  .quad.over { box-shadow: 0 0 0 2px rgba(0,0,0,.04); }
+  .qhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .qhead .left { display: flex; align-items: center; gap: 10px; }
+  .dot { width: 10px; height: 10px; border-radius: 999px; flex: 0 0 auto; }
+  .qtitle { font-weight: 600; font-size: 15px; line-height: 1.1; }
+  .qsubtitle { font-size: 12px; color: var(--faint); line-height: 1.1; margin-top: 1px; }
+  .count { font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .list { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .empty { font-size: 14px; color: var(--faint); font-style: italic; padding: 8px 0; }
+  .task { display: flex; align-items: flex-start; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .task[draggable="true"] { cursor: grab; }
+  .task[draggable="true"]:active { cursor: grabbing; }
+  .box { flex: 0 0 auto; margin-top: 2px; width: 20px; height: 20px; border-radius: 6px; border: 1px solid #d4d4d8; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .box:hover { border-color: #71717a; }
+  .box.checked { border-color: transparent; background: var(--emerald); }
+  .box.checked:hover { background: var(--emerald-dark); }
+  .box svg { display: none; }
+  .box.checked svg { display: block; }
+  .body { flex: 1; min-width: 0; }
+  .text { display: block; font-size: 14px; line-height: 1.35; word-break: break-word; }
+  .text.done { color: var(--faint); text-decoration: line-through; }
+  .stamp { display: block; font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .meta .mdot { width: 6px; height: 6px; border-radius: 999px; }
+  .del { flex: 0 0 auto; margin-top: 2px; background: none; border: 0; color: #d4d4d8; cursor: pointer; padding: 2px; opacity: 0; transition: opacity .12s, color .12s; }
+  .task:hover .del, .donerow:hover .del { opacity: 1; }
+  .del:hover { color: var(--rose); }
+  .add { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .add input { flex: 1; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; outline: none; }
+  .add input:focus { border-color: #a1a1aa; }
+  .add input::placeholder { color: var(--faint); }
+  .add button { flex: 0 0 auto; background: #f4f4f5; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; color: #3f3f46; cursor: pointer; display: flex; }
+  .add button:hover { background: #e4e4e7; }
+  .done-card { margin-top: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .done-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .done-head .left { display: flex; align-items: center; gap: 8px; color: #52525b; }
+  .done-head h2 { font-size: 15px; font-weight: 600; margin: 0; }
+  .clear { background: none; border: 0; font-size: 12px; color: var(--faint); cursor: pointer; }
+  .clear:hover { color: var(--rose); }
+  .donerow { display: flex; align-items: flex-start; gap: 10px; background: #fafafa; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .donelist { display: flex; flex-direction: column; gap: 6px; }
+  svg { width: 14px; height: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Eisenhower-Matrix</h1>
+      <p class="sub">Aufgaben einordnen, abhaken, per Drag &amp; Drop verschieben. Wird automatisch gespeichert.</p>
+    </div>
+    <div class="toggle" id="toggle">
+      <button data-mode="private" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>
+        Privat
+      </button>
+      <button data-mode="business">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Geschäftlich
+      </button>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="done-card">
+    <div class="done-head">
+      <div class="left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+        <h2>Erledigt</h2>
+        <span class="count" id="doneCount">0</span>
+      </div>
+      <button class="clear" id="clearDone" style="display:none">Alle löschen</button>
+    </div>
+    <div id="doneList"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var QUADRANTS = [
+    { id: "do",        title: "Tun",         subtitle: "dringend · wichtig",        dot: "#f43f5e", head: "#be123c", glow: "#fff1f2", border: "#fecdd3", over: "#ffe4e6", overBorder: "#fb7185" },
+    { id: "plan",      title: "Planen",      subtitle: "wichtig · nicht dringend",  dot: "#0ea5e9", head: "#0369a1", glow: "#f0f9ff", border: "#bae6fd", over: "#e0f2fe", overBorder: "#38bdf8" },
+    { id: "delegate",  title: "Delegieren",  subtitle: "dringend · nicht wichtig",  dot: "#f59e0b", head: "#b45309", glow: "#fffbeb", border: "#fde68a", over: "#fef3c7", overBorder: "#fbbf24" },
+    { id: "eliminate", title: "Eliminieren", subtitle: "weder · noch",              dot: "#a1a1aa", head: "#71717a", glow: "#fafafa", border: "#e4e4e7", over: "#f4f4f5", overBorder: "#a1a1aa" }
+  ];
+  var QMAP = {}; QUADRANTS.forEach(function (q) { QMAP[q.id] = q; });
+
+  var state = { mode: "private", tasks: [] };
+  var dragId = null;
+  var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
+  var TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>';
+  var PLUS  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
+
+  function keyFor(m) { return "eisenhower:" + m; }
+  function load() {
+    try { var r = localStorage.getItem(keyFor(state.mode)); state.tasks = r ? JSON.parse(r) : []; }
+    catch (e) { state.tasks = []; }
+  }
+  function save() {
+    try { localStorage.setItem(keyFor(state.mode), JSON.stringify(state.tasks)); }
+    catch (e) { console.error("Speichern fehlgeschlagen", e); }
+  }
+  function fmt(ts) {
+    if (!ts) return null;
+    try {
+      return new Date(ts).toLocaleString("de-CH", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+    } catch (e) { return null; }
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function uid() { return Date.now() + "-" + Math.random().toString(36).slice(2, 7); }
+
+  function addTask(q, text) {
+    text = text.trim(); if (!text) return;
+    state.tasks.push({ id: uid(), text: text, quadrant: q, done: false, createdAt: Date.now() });
+    save(); render();
+  }
+  function toggleDone(id) {
+    state.tasks = state.tasks.map(function (t) { return t.id === id ? Object.assign({}, t, { done: !t.done }) : t; });
+    save(); render();
+  }
+  function removeTask(id) {
+    state.tasks = state.tasks.filter(function (t) { return t.id !== id; });
+    save(); render();
+  }
+  function moveTask(id, q) {
+    state.tasks = state.tasks.map(function (t) { return t.id === id ? Object.assign({}, t, { quadrant: q }) : t; });
+    save(); render();
+  }
+  function clearDone() {
+    state.tasks = state.tasks.filter(function (t) { return !t.done; });
+    save(); render();
+  }
+  function setMode(m) {
+    if (m === state.mode) return;
+    state.mode = m; load();
+    var btns = document.querySelectorAll("#toggle button");
+    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.mode === m);
+    render();
+  }
+
+  function render() {
+    var grid = document.getElementById("grid");
+    grid.innerHTML = "";
+
+    QUADRANTS.forEach(function (q) {
+      var open = state.tasks.filter(function (t) { return t.quadrant === q.id && !t.done; });
+
+      var card = document.createElement("div");
+      card.className = "quad";
+      card.style.background = q.glow;
+      card.style.borderColor = q.border;
+      card.dataset.q = q.id;
+
+      var rows = open.map(function (t) {
+        var stamp = fmt(t.createdAt);
+        return '<div class="task" draggable="true" data-id="' + t.id + '">' +
+          '<button class="box" data-act="toggle" data-id="' + t.id + '"></button>' +
+          '<div class="body"><span class="text">' + esc(t.text) + '</span>' +
+          (stamp ? '<span class="stamp">' + stamp + '</span>' : '') + '</div>' +
+          '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button>' +
+          '</div>';
+      }).join("");
+
+      card.innerHTML =
+        '<div class="qhead"><div class="left">' +
+          '<span class="dot" style="background:' + q.dot + '"></span>' +
+          '<div><div class="qtitle" style="color:' + q.head + '">' + q.title + '</div>' +
+          '<div class="qsubtitle">' + q.subtitle + '</div></div></div>' +
+          '<span class="count">' + open.length + ' offen</span></div>' +
+        '<div class="list">' + (open.length ? rows : '<div class="empty">Noch keine Aufgaben.</div>') + '</div>' +
+        '<div class="add"><input type="text" placeholder="Aufgabe hinzufügen …" data-add="' + q.id + '" />' +
+        '<button data-addbtn="' + q.id + '">' + PLUS + '</button></div>';
+
+      grid.appendChild(card);
+    });
+
+    // Erledigt
+    var done = state.tasks.filter(function (t) { return t.done; });
+    document.getElementById("doneCount").textContent = done.length;
+    document.getElementById("clearDone").style.display = done.length ? "" : "none";
+    var dl = document.getElementById("doneList");
+    if (!done.length) {
+      dl.innerHTML = '<div class="empty">Noch nichts erledigt.</div>';
+    } else {
+      dl.className = "donelist";
+      dl.innerHTML = done.map(function (t) {
+        var q = QMAP[t.quadrant]; var stamp = fmt(t.createdAt);
+        return '<div class="donerow">' +
+          '<button class="box checked" data-act="toggle" data-id="' + t.id + '" title="Wieder als offen markieren">' + CHECK + '</button>' +
+          '<div class="body"><span class="text done">' + esc(t.text) + '</span>' +
+          '<span class="meta"><span class="meta-q"><span class="mdot" style="display:inline-block;background:' + (q ? q.dot : "#a1a1aa") + '"></span> ' + (q ? q.title : "—") + '</span>' +
+          (stamp ? ' · ' + stamp : '') + '</span></div>' +
+          '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button>' +
+          '</div>';
+      }).join("");
+    }
+
+    wireDnD();
+  }
+
+  function wireDnD() {
+    var tasks = document.querySelectorAll('.task[draggable="true"]');
+    tasks.forEach(function (el) {
+      el.addEventListener("dragstart", function () { dragId = el.dataset.id; });
+      el.addEventListener("dragend", function () { dragId = null; clearOver(); });
+    });
+    var quads = document.querySelectorAll(".quad");
+    quads.forEach(function (el) {
+      el.addEventListener("dragover", function (e) {
+        e.preventDefault(); var q = QMAP[el.dataset.q];
+        el.classList.add("over"); el.style.background = q.over; el.style.borderColor = q.overBorder;
+      });
+      el.addEventListener("dragleave", function () { resetQuad(el); });
+      el.addEventListener("drop", function (e) {
+        e.preventDefault();
+        if (dragId) moveTask(dragId, el.dataset.q);
+        dragId = null;
+      });
+    });
+  }
+  function resetQuad(el) {
+    var q = QMAP[el.dataset.q]; el.classList.remove("over");
+    el.style.background = q.glow; el.style.borderColor = q.border;
+  }
+  function clearOver() {
+    document.querySelectorAll(".quad").forEach(resetQuad);
+  }
+
+  // Event-Delegation
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode]") : null;
+    if (!btn) return;
+    if (btn.dataset.act === "toggle") toggleDone(btn.dataset.id);
+    else if (btn.dataset.act === "del") removeTask(btn.dataset.id);
+    else if (btn.dataset.addbtn) {
+      var inp = document.querySelector('input[data-add="' + btn.dataset.addbtn + '"]');
+      if (inp) { addTask(btn.dataset.addbtn, inp.value); }
+    } else if (btn.dataset.mode) setMode(btn.dataset.mode);
+  });
+  document.getElementById("clearDone").addEventListener("click", clearDone);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.add) {
+      addTask(e.target.dataset.add, e.target.value);
+    }
+  });
+
+  load();
+  render();
+
+  // Service Worker nur registrieren, wenn über http(s) ausgeliefert (nicht bei file://)
+  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>
