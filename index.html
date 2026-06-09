@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -21,17 +20,35 @@
     -webkit-font-smoothing: antialiased;
   }
   .wrap { max-width: 1024px; margin: 0 auto; padding: 24px 16px; }
-  .top { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
-  @media (min-width: 640px) { .top { flex-direction: row; align-items: flex-end; justify-content: space-between; } }
-  h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+
+  /* Anmeldung */
+  .auth { min-height: 80vh; display: flex; align-items: center; justify-content: center; }
+  .auth-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 40px 32px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.06); max-width: 360px; width: 100%; }
+  .auth-card .mini { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 64px; margin: 0 auto 20px; }
+  .auth-card .mini span { aspect-ratio: 1; border-radius: 7px; }
+  .auth-card h1 { font-size: 20px; margin: 0 0 6px; }
+  .auth-card p { font-size: 14px; color: var(--muted); margin: 0 0 24px; }
+  .gbtn { display: inline-flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #d4d4d8; border-radius: 10px; padding: 10px 18px; font-size: 14px; font-weight: 500; color: #3f3f46; cursor: pointer; }
+  .gbtn:hover { background: #fafafa; }
+  .auth-err { color: var(--rose); font-size: 13px; margin-top: 16px; min-height: 18px; }
+
+  .top { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+  .top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  h1.title { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
   .sub { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
+  .account { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  .account img { width: 28px; height: 28px; border-radius: 999px; }
+  .account .who { font-size: 13px; color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .signout { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .signout:hover { color: var(--ink); background: #fafafa; }
+  .sync { font-size: 12px; color: var(--faint); }
+
   .toggle { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
   .toggle button { border: 0; background: transparent; color: var(--muted); font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
   .toggle button.active { background: #18181b; color: #fff; }
   .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
   @media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
   .quad { border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; min-height: 224px; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: background .15s, border-color .15s; }
-  .quad.over { box-shadow: 0 0 0 2px rgba(0,0,0,.04); }
   .qhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .qhead .left { display: flex; align-items: center; gap: 10px; }
   .dot { width: 10px; height: 10px; border-radius: 999px; flex: 0 0 auto; }
@@ -54,7 +71,7 @@
   .text.done { color: var(--faint); text-decoration: line-through; }
   .stamp { display: block; font-size: 12px; color: var(--faint); margin-top: 2px; }
   .meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--faint); margin-top: 2px; }
-  .meta .mdot { width: 6px; height: 6px; border-radius: 999px; }
+  .meta .mdot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
   .del { flex: 0 0 auto; margin-top: 2px; background: none; border: 0; color: #d4d4d8; cursor: pointer; padding: 2px; opacity: 0; transition: opacity .12s, color .12s; }
   .task:hover .del, .donerow:hover .del { opacity: 1; }
   .del:hover { color: var(--rose); }
@@ -72,15 +89,42 @@
   .clear:hover { color: var(--rose); }
   .donerow { display: flex; align-items: flex-start; gap: 10px; background: #fafafa; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
   .donelist { display: flex; flex-direction: column; gap: 6px; }
+  .hidden { display: none !important; }
   svg { width: 14px; height: 14px; }
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<!-- Anmeldebildschirm -->
+<div class="wrap auth" id="authScreen">
+  <div class="auth-card">
+    <div class="mini">
+      <span style="background:#f43f5e"></span><span style="background:#0ea5e9"></span>
+      <span style="background:#f59e0b"></span><span style="background:#a1a1aa"></span>
+    </div>
+    <h1>Eisenhower-Matrix</h1>
+    <p id="authText">Melde dich an, damit deine Aufgaben auf allen Geräten synchron sind.</p>
+    <button class="gbtn" id="signIn">
+      <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.4 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.1 5.3-4.6 7l7.1 5.5c4.1-3.8 6.5-9.5 6.5-17z"/><path fill="#FBBC05" d="M10.5 28.3c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.1 0 19.9 0 23.7s1 7.6 2.6 10.8l7.9-6.2z"/><path fill="#34A853" d="M24 47.4c6.4 0 11.9-2.1 15.8-5.8l-7.1-5.5c-2 1.4-4.6 2.2-8.7 2.2-6.3 0-11.6-3.7-13.5-9.1l-7.9 6.2C6.5 42 14.6 47.4 24 47.4z"/></svg>
+      Mit Google anmelden
+    </button>
+    <div class="auth-err" id="authErr"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="wrap hidden" id="appScreen">
   <div class="top">
-    <div>
-      <h1>Eisenhower-Matrix</h1>
-      <p class="sub">Aufgaben einordnen, abhaken, per Drag &amp; Drop verschieben. Wird automatisch gespeichert.</p>
+    <div class="top-row">
+      <div>
+        <h1 class="title">Eisenhower-Matrix</h1>
+        <p class="sub">Aufgaben einordnen, abhaken, per Drag &amp; Drop verschieben. <span class="sync" id="syncState">Synchronisiert</span></p>
+      </div>
+      <div class="account">
+        <img id="avatar" alt="" />
+        <span class="who" id="who"></span>
+        <button class="signout" id="signOut">Abmelden</button>
+      </div>
     </div>
     <div class="toggle" id="toggle">
       <button data-mode="private" class="active">
@@ -109,189 +153,229 @@
   </div>
 </div>
 
-<script>
-(function () {
-  "use strict";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, onSnapshot, setDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  var QUADRANTS = [
-    { id: "do",        title: "Tun",         subtitle: "dringend · wichtig",        dot: "#f43f5e", head: "#be123c", glow: "#fff1f2", border: "#fecdd3", over: "#ffe4e6", overBorder: "#fb7185" },
-    { id: "plan",      title: "Planen",      subtitle: "wichtig · nicht dringend",  dot: "#0ea5e9", head: "#0369a1", glow: "#f0f9ff", border: "#bae6fd", over: "#e0f2fe", overBorder: "#38bdf8" },
-    { id: "delegate",  title: "Delegieren",  subtitle: "dringend · nicht wichtig",  dot: "#f59e0b", head: "#b45309", glow: "#fffbeb", border: "#fde68a", over: "#fef3c7", overBorder: "#fbbf24" },
-    { id: "eliminate", title: "Eliminieren", subtitle: "weder · noch",              dot: "#a1a1aa", head: "#71717a", glow: "#fafafa", border: "#e4e4e7", over: "#f4f4f5", overBorder: "#a1a1aa" }
-  ];
-  var QMAP = {}; QUADRANTS.forEach(function (q) { QMAP[q.id] = q; });
+/* ====== HIER deine Firebase-Konfiguration einsetzen ====== */
+const firebaseConfig = {
+  apiKey: "AIzaSyCzVSbjzverUz6mVMfRv4Sal55EbkXhja0",
+  authDomain: "eisenhower-ef0ef.firebaseapp.com",
+  projectId: "eisenhower-ef0ef",
+  storageBucket: "eisenhower-ef0ef.firebasestorage.app",
+  messagingSenderId: "350898423640",
+  appId: "1:350898423640:web:b799de0108cb6edccd872d"
+};
+/* ========================================================= */
 
-  var state = { mode: "private", tasks: [] };
-  var dragId = null;
-  var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
-  var TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>';
-  var PLUS  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
+var authScreen = document.getElementById("authScreen");
+var appScreen = document.getElementById("appScreen");
+var authErr = document.getElementById("authErr");
 
-  function keyFor(m) { return "eisenhower:" + m; }
-  function load() {
-    try { var r = localStorage.getItem(keyFor(state.mode)); state.tasks = r ? JSON.parse(r) : []; }
-    catch (e) { state.tasks = []; }
-  }
-  function save() {
-    try { localStorage.setItem(keyFor(state.mode), JSON.stringify(state.tasks)); }
-    catch (e) { console.error("Speichern fehlgeschlagen", e); }
-  }
-  function fmt(ts) {
-    if (!ts) return null;
-    try {
-      return new Date(ts).toLocaleString("de-CH", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
-    } catch (e) { return null; }
-  }
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
-  function uid() { return Date.now() + "-" + Math.random().toString(36).slice(2, 7); }
+if (firebaseConfig.apiKey.indexOf("DEIN") === 0) {
+  document.getElementById("authText").textContent =
+    "Firebase-Konfiguration fehlt noch – bitte firebaseConfig in der Datei eintragen.";
+  document.getElementById("signIn").disabled = true;
+}
 
-  function addTask(q, text) {
-    text = text.trim(); if (!text) return;
-    state.tasks.push({ id: uid(), text: text, quadrant: q, done: false, createdAt: Date.now() });
-    save(); render();
-  }
-  function toggleDone(id) {
-    state.tasks = state.tasks.map(function (t) { return t.id === id ? Object.assign({}, t, { done: !t.done }) : t; });
-    save(); render();
-  }
-  function removeTask(id) {
-    state.tasks = state.tasks.filter(function (t) { return t.id !== id; });
-    save(); render();
-  }
-  function moveTask(id, q) {
-    state.tasks = state.tasks.map(function (t) { return t.id === id ? Object.assign({}, t, { quadrant: q }) : t; });
-    save(); render();
-  }
-  function clearDone() {
-    state.tasks = state.tasks.filter(function (t) { return !t.done; });
-    save(); render();
-  }
-  function setMode(m) {
-    if (m === state.mode) return;
-    state.mode = m; load();
-    var btns = document.querySelectorAll("#toggle button");
-    for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.mode === m);
-    render();
-  }
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
 
-  function render() {
-    var grid = document.getElementById("grid");
-    grid.innerHTML = "";
+var QUADRANTS = [
+  { id: "do",        title: "Tun",         subtitle: "dringend · wichtig",        dot: "#f43f5e", head: "#be123c", glow: "#fff1f2", border: "#fecdd3", over: "#ffe4e6", overBorder: "#fb7185" },
+  { id: "plan",      title: "Planen",      subtitle: "wichtig · nicht dringend",  dot: "#0ea5e9", head: "#0369a1", glow: "#f0f9ff", border: "#bae6fd", over: "#e0f2fe", overBorder: "#38bdf8" },
+  { id: "delegate",  title: "Delegieren",  subtitle: "dringend · nicht wichtig",  dot: "#f59e0b", head: "#b45309", glow: "#fffbeb", border: "#fde68a", over: "#fef3c7", overBorder: "#fbbf24" },
+  { id: "eliminate", title: "Eliminieren", subtitle: "weder · noch",              dot: "#a1a1aa", head: "#71717a", glow: "#fafafa", border: "#e4e4e7", over: "#f4f4f5", overBorder: "#a1a1aa" }
+];
+var QMAP = {}; QUADRANTS.forEach(function (q) { QMAP[q.id] = q; });
 
-    QUADRANTS.forEach(function (q) {
-      var open = state.tasks.filter(function (t) { return t.quadrant === q.id && !t.done; });
+var store = { private: [], business: [] };
+var state = { mode: "private" };
+var docRef = null, unsub = null, dragId = null;
 
-      var card = document.createElement("div");
-      card.className = "quad";
-      card.style.background = q.glow;
-      card.style.borderColor = q.border;
-      card.dataset.q = q.id;
+var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
+var TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>';
+var PLUS  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
 
-      var rows = open.map(function (t) {
-        var stamp = fmt(t.createdAt);
-        return '<div class="task" draggable="true" data-id="' + t.id + '">' +
-          '<button class="box" data-act="toggle" data-id="' + t.id + '"></button>' +
-          '<div class="body"><span class="text">' + esc(t.text) + '</span>' +
-          (stamp ? '<span class="stamp">' + stamp + '</span>' : '') + '</div>' +
-          '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button>' +
-          '</div>';
-      }).join("");
-
-      card.innerHTML =
-        '<div class="qhead"><div class="left">' +
-          '<span class="dot" style="background:' + q.dot + '"></span>' +
-          '<div><div class="qtitle" style="color:' + q.head + '">' + q.title + '</div>' +
-          '<div class="qsubtitle">' + q.subtitle + '</div></div></div>' +
-          '<span class="count">' + open.length + ' offen</span></div>' +
-        '<div class="list">' + (open.length ? rows : '<div class="empty">Noch keine Aufgaben.</div>') + '</div>' +
-        '<div class="add"><input type="text" placeholder="Aufgabe hinzufügen …" data-add="' + q.id + '" />' +
-        '<button data-addbtn="' + q.id + '">' + PLUS + '</button></div>';
-
-      grid.appendChild(card);
-    });
-
-    // Erledigt
-    var done = state.tasks.filter(function (t) { return t.done; });
-    document.getElementById("doneCount").textContent = done.length;
-    document.getElementById("clearDone").style.display = done.length ? "" : "none";
-    var dl = document.getElementById("doneList");
-    if (!done.length) {
-      dl.innerHTML = '<div class="empty">Noch nichts erledigt.</div>';
-    } else {
-      dl.className = "donelist";
-      dl.innerHTML = done.map(function (t) {
-        var q = QMAP[t.quadrant]; var stamp = fmt(t.createdAt);
-        return '<div class="donerow">' +
-          '<button class="box checked" data-act="toggle" data-id="' + t.id + '" title="Wieder als offen markieren">' + CHECK + '</button>' +
-          '<div class="body"><span class="text done">' + esc(t.text) + '</span>' +
-          '<span class="meta"><span class="meta-q"><span class="mdot" style="display:inline-block;background:' + (q ? q.dot : "#a1a1aa") + '"></span> ' + (q ? q.title : "—") + '</span>' +
-          (stamp ? ' · ' + stamp : '') + '</span></div>' +
-          '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button>' +
-          '</div>';
-      }).join("");
-    }
-
-    wireDnD();
-  }
-
-  function wireDnD() {
-    var tasks = document.querySelectorAll('.task[draggable="true"]');
-    tasks.forEach(function (el) {
-      el.addEventListener("dragstart", function () { dragId = el.dataset.id; });
-      el.addEventListener("dragend", function () { dragId = null; clearOver(); });
-    });
-    var quads = document.querySelectorAll(".quad");
-    quads.forEach(function (el) {
-      el.addEventListener("dragover", function (e) {
-        e.preventDefault(); var q = QMAP[el.dataset.q];
-        el.classList.add("over"); el.style.background = q.over; el.style.borderColor = q.overBorder;
-      });
-      el.addEventListener("dragleave", function () { resetQuad(el); });
-      el.addEventListener("drop", function (e) {
-        e.preventDefault();
-        if (dragId) moveTask(dragId, el.dataset.q);
-        dragId = null;
-      });
-    });
-  }
-  function resetQuad(el) {
-    var q = QMAP[el.dataset.q]; el.classList.remove("over");
-    el.style.background = q.glow; el.style.borderColor = q.border;
-  }
-  function clearOver() {
-    document.querySelectorAll(".quad").forEach(resetQuad);
-  }
-
-  // Event-Delegation
-  document.addEventListener("click", function (e) {
-    var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode]") : null;
-    if (!btn) return;
-    if (btn.dataset.act === "toggle") toggleDone(btn.dataset.id);
-    else if (btn.dataset.act === "del") removeTask(btn.dataset.id);
-    else if (btn.dataset.addbtn) {
-      var inp = document.querySelector('input[data-add="' + btn.dataset.addbtn + '"]');
-      if (inp) { addTask(btn.dataset.addbtn, inp.value); }
-    } else if (btn.dataset.mode) setMode(btn.dataset.mode);
+function fmt(ts) {
+  if (!ts) return null;
+  try { return new Date(ts).toLocaleString("de-CH", { day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit" }); }
+  catch (e) { return null; }
+}
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
   });
-  document.getElementById("clearDone").addEventListener("click", clearDone);
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.add) {
-      addTask(e.target.dataset.add, e.target.value);
-    }
-  });
+}
+function uid() { return Date.now() + "-" + Math.random().toString(36).slice(2, 7); }
 
-  load();
+/* ---- Authentifizierung ---- */
+document.getElementById("signIn").addEventListener("click", function () {
+  authErr.textContent = "";
+  signInWithPopup(auth, new GoogleAuthProvider()).catch(function (e) {
+    authErr.textContent = "Anmeldung fehlgeschlagen: " + (e && e.code ? e.code : e);
+  });
+});
+document.getElementById("signOut").addEventListener("click", function () { signOut(auth); });
+
+onAuthStateChanged(auth, function (user) {
+  if (user) {
+    docRef = doc(db, "users", user.uid);
+    if (unsub) unsub();
+    unsub = onSnapshot(docRef, function (snap) {
+      var d = snap.data() || {};
+      store.private = Array.isArray(d.private) ? d.private : [];
+      store.business = Array.isArray(d.business) ? d.business : [];
+      document.getElementById("syncState").textContent =
+        snap.metadata.fromCache ? "Offline – wird abgeglichen" : "Synchronisiert";
+      render();
+    }, function (err) { console.error(err); });
+
+    document.getElementById("who").textContent = user.displayName || user.email || "";
+    var av = document.getElementById("avatar");
+    if (user.photoURL) { av.src = user.photoURL; av.style.display = ""; } else { av.style.display = "none"; }
+    authScreen.classList.add("hidden");
+    appScreen.classList.remove("hidden");
+  } else {
+    if (unsub) { unsub(); unsub = null; }
+    docRef = null; store = { private: [], business: [] };
+    appScreen.classList.add("hidden");
+    authScreen.classList.remove("hidden");
+  }
+});
+
+/* ---- Datenoperationen ---- */
+function persist() {
+  if (!docRef) return;
+  var payload = {}; payload[state.mode] = store[state.mode];
+  setDoc(docRef, payload, { merge: true }).catch(function (e) {
+    console.error("Speichern fehlgeschlagen", e);
+  });
+}
+function addTask(q, text) {
+  text = text.trim(); if (!text || !docRef) return;
+  store[state.mode] = store[state.mode].concat([{ id: uid(), text: text, quadrant: q, done: false, createdAt: Date.now() }]);
+  render(); persist();
+}
+function toggleDone(id) {
+  store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { done: !t.done }) : t; });
+  render(); persist();
+}
+function removeTask(id) {
+  store[state.mode] = store[state.mode].filter(function (t) { return t.id !== id; });
+  render(); persist();
+}
+function moveTask(id, q) {
+  store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { quadrant: q }) : t; });
+  render(); persist();
+}
+function clearDone() {
+  store[state.mode] = store[state.mode].filter(function (t) { return !t.done; });
+  render(); persist();
+}
+function setMode(m) {
+  if (m === state.mode) return;
+  state.mode = m;
+  var btns = document.querySelectorAll("#toggle button");
+  for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.mode === m);
   render();
+}
 
-  // Service Worker nur registrieren, wenn über http(s) ausgeliefert (nicht bei file://)
-  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
-    navigator.serviceWorker.register("sw.js").catch(function () {});
+/* ---- Darstellung ---- */
+function render() {
+  var tasks = store[state.mode] || [];
+  var grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  QUADRANTS.forEach(function (q) {
+    var open = tasks.filter(function (t) { return t.quadrant === q.id && !t.done; });
+    var card = document.createElement("div");
+    card.className = "quad"; card.style.background = q.glow; card.style.borderColor = q.border; card.dataset.q = q.id;
+
+    var rows = open.map(function (t) {
+      var stamp = fmt(t.createdAt);
+      return '<div class="task" draggable="true" data-id="' + t.id + '">' +
+        '<button class="box" data-act="toggle" data-id="' + t.id + '"></button>' +
+        '<div class="body"><span class="text">' + esc(t.text) + '</span>' +
+        (stamp ? '<span class="stamp">' + stamp + '</span>' : '') + '</div>' +
+        '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button></div>';
+    }).join("");
+
+    card.innerHTML =
+      '<div class="qhead"><div class="left">' +
+        '<span class="dot" style="background:' + q.dot + '"></span>' +
+        '<div><div class="qtitle" style="color:' + q.head + '">' + q.title + '</div>' +
+        '<div class="qsubtitle">' + q.subtitle + '</div></div></div>' +
+        '<span class="count">' + open.length + ' offen</span></div>' +
+      '<div class="list">' + (open.length ? rows : '<div class="empty">Noch keine Aufgaben.</div>') + '</div>' +
+      '<div class="add"><input type="text" placeholder="Aufgabe hinzufügen …" data-add="' + q.id + '" />' +
+      '<button data-addbtn="' + q.id + '">' + PLUS + '</button></div>';
+    grid.appendChild(card);
+  });
+
+  var done = tasks.filter(function (t) { return t.done; });
+  document.getElementById("doneCount").textContent = done.length;
+  document.getElementById("clearDone").style.display = done.length ? "" : "none";
+  var dl = document.getElementById("doneList");
+  if (!done.length) { dl.className = ""; dl.innerHTML = '<div class="empty">Noch nichts erledigt.</div>'; }
+  else {
+    dl.className = "donelist";
+    dl.innerHTML = done.map(function (t) {
+      var q = QMAP[t.quadrant]; var stamp = fmt(t.createdAt);
+      return '<div class="donerow">' +
+        '<button class="box checked" data-act="toggle" data-id="' + t.id + '" title="Wieder als offen markieren">' + CHECK + '</button>' +
+        '<div class="body"><span class="text done">' + esc(t.text) + '</span>' +
+        '<span class="meta"><span><span class="mdot" style="background:' + (q ? q.dot : "#a1a1aa") + '"></span> ' + (q ? q.title : "—") + '</span>' +
+        (stamp ? ' · ' + stamp : '') + '</span></div>' +
+        '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button></div>';
+    }).join("");
   }
-})();
+  wireDnD();
+}
+
+function wireDnD() {
+  document.querySelectorAll('.task[draggable="true"]').forEach(function (el) {
+    el.addEventListener("dragstart", function () { dragId = el.dataset.id; });
+    el.addEventListener("dragend", function () { dragId = null; clearOver(); });
+  });
+  document.querySelectorAll(".quad").forEach(function (el) {
+    el.addEventListener("dragover", function (e) {
+      e.preventDefault(); var q = QMAP[el.dataset.q];
+      el.style.background = q.over; el.style.borderColor = q.overBorder;
+    });
+    el.addEventListener("dragleave", function () { resetQuad(el); });
+    el.addEventListener("drop", function (e) {
+      e.preventDefault(); if (dragId) moveTask(dragId, el.dataset.q); dragId = null;
+    });
+  });
+}
+function resetQuad(el) { var q = QMAP[el.dataset.q]; el.style.background = q.glow; el.style.borderColor = q.border; }
+function clearOver() { document.querySelectorAll(".quad").forEach(resetQuad); }
+
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode]") : null;
+  if (!btn) return;
+  if (btn.dataset.act === "toggle") toggleDone(btn.dataset.id);
+  else if (btn.dataset.act === "del") removeTask(btn.dataset.id);
+  else if (btn.dataset.addbtn) {
+    var inp = document.querySelector('input[data-add="' + btn.dataset.addbtn + '"]');
+    if (inp) addTask(btn.dataset.addbtn, inp.value);
+  } else if (btn.dataset.mode) setMode(btn.dataset.mode);
+});
+document.getElementById("clearDone").addEventListener("click", clearDone);
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.add) addTask(e.target.dataset.add, e.target.value);
+});
+
+if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+  navigator.serviceWorker.register("sw.js").catch(function () {});
+}
 </script>
 </body>
 </html>
