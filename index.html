@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -67,8 +68,11 @@
   .box svg { display: none; }
   .box.checked svg { display: block; }
   .body { flex: 1; min-width: 0; }
-  .text { display: block; font-size: 14px; line-height: 1.35; word-break: break-word; }
-  .text.done { color: var(--faint); text-decoration: line-through; }
+  .text { display: block; font-size: 14px; line-height: 1.35; word-break: break-word; cursor: text; border-radius: 5px; padding: 1px 3px; margin: -1px -3px; }
+  .text:hover { background: #f4f4f5; }
+  .text.done { color: var(--faint); text-decoration: line-through; cursor: default; }
+  .text.done:hover { background: transparent; }
+  .edit { width: 100%; font: inherit; font-size: 14px; line-height: 1.35; border: 1px solid #a1a1aa; border-radius: 6px; padding: 3px 6px; outline: none; background: #fff; color: var(--ink); }
   .stamp { display: block; font-size: 12px; color: var(--faint); margin-top: 2px; }
   .meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--faint); margin-top: 2px; }
   .meta .mdot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
@@ -118,7 +122,7 @@
     <div class="top-row">
       <div>
         <h1 class="title">Eisenhower-Matrix</h1>
-        <p class="sub">Aufgaben einordnen, abhaken, per Drag &amp; Drop verschieben. <span class="sync" id="syncState">Synchronisiert</span></p>
+        <p class="sub">Klick auf einen Text zum Bearbeiten, per Drag &amp; Drop verschieben. <span class="sync" id="syncState">Synchronisiert</span></p>
       </div>
       <div class="account">
         <img id="avatar" alt="" />
@@ -197,7 +201,7 @@ var QMAP = {}; QUADRANTS.forEach(function (q) { QMAP[q.id] = q; });
 
 var store = { private: [], business: [] };
 var state = { mode: "private" };
-var docRef = null, unsub = null, dragId = null;
+var docRef = null, unsub = null, dragId = null, editingId = null;
 
 var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
 var TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>';
@@ -279,9 +283,23 @@ function clearDone() {
   store[state.mode] = store[state.mode].filter(function (t) { return !t.done; });
   render(); persist();
 }
+function startEdit(id) { editingId = id; render(); }
+function cancelEdit() { editingId = null; render(); }
+function commitEdit(id, text) {
+  if (editingId !== id) return;
+  editingId = null;
+  text = (text || "").trim();
+  var changed = false;
+  store[state.mode] = store[state.mode].map(function (t) {
+    if (t.id === id && text && t.text !== text) { changed = true; return Object.assign({}, t, { text: text }); }
+    return t;
+  });
+  render();
+  if (changed) persist();
+}
 function setMode(m) {
   if (m === state.mode) return;
-  state.mode = m;
+  state.mode = m; editingId = null;
   var btns = document.querySelectorAll("#toggle button");
   for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.mode === m);
   render();
@@ -300,9 +318,13 @@ function render() {
 
     var rows = open.map(function (t) {
       var stamp = fmt(t.createdAt);
-      return '<div class="task" draggable="true" data-id="' + t.id + '">' +
+      var editing = editingId === t.id;
+      var bodyInner = editing
+        ? '<input class="edit" data-edit-id="' + t.id + '" value="' + esc(t.text) + '" />'
+        : '<span class="text" data-act="edit" data-id="' + t.id + '">' + esc(t.text) + '</span>';
+      return '<div class="task" draggable="' + (editing ? "false" : "true") + '" data-id="' + t.id + '">' +
         '<button class="box" data-act="toggle" data-id="' + t.id + '"></button>' +
-        '<div class="body"><span class="text">' + esc(t.text) + '</span>' +
+        '<div class="body">' + bodyInner +
         (stamp ? '<span class="stamp">' + stamp + '</span>' : '') + '</div>' +
         '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button></div>';
     }).join("");
@@ -336,7 +358,13 @@ function render() {
         '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button></div>';
     }).join("");
   }
+
   wireDnD();
+
+  if (editingId) {
+    var ie = document.querySelector('input[data-edit-id="' + editingId + '"]');
+    if (ie) { ie.focus(); ie.select(); }
+  }
 }
 
 function wireDnD() {
@@ -362,6 +390,7 @@ document.addEventListener("click", function (e) {
   var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode]") : null;
   if (!btn) return;
   if (btn.dataset.act === "toggle") toggleDone(btn.dataset.id);
+  else if (btn.dataset.act === "edit") startEdit(btn.dataset.id);
   else if (btn.dataset.act === "del") removeTask(btn.dataset.id);
   else if (btn.dataset.addbtn) {
     var inp = document.querySelector('input[data-add="' + btn.dataset.addbtn + '"]');
@@ -369,8 +398,21 @@ document.addEventListener("click", function (e) {
   } else if (btn.dataset.mode) setMode(btn.dataset.mode);
 });
 document.getElementById("clearDone").addEventListener("click", clearDone);
+
 document.addEventListener("keydown", function (e) {
-  if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.add) addTask(e.target.dataset.add, e.target.value);
+  var t = e.target;
+  if (!t || !t.dataset) return;
+  if (t.dataset.add && e.key === "Enter") {
+    addTask(t.dataset.add, t.value);
+  } else if (t.dataset.editId) {
+    if (e.key === "Enter") { e.preventDefault(); commitEdit(t.dataset.editId, t.value); }
+    else if (e.key === "Escape") { e.preventDefault(); cancelEdit(); }
+  }
+});
+document.addEventListener("focusout", function (e) {
+  if (e.target && e.target.dataset && e.target.dataset.editId) {
+    commitEdit(e.target.dataset.editId, e.target.value);
+  }
 });
 
 if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
