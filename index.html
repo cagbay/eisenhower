@@ -138,6 +138,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>
         Privat
       </button>
+      <button data-mode="school">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.5 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg>
+        Schule
+      </button>
     </div>
   </div>
 
@@ -198,7 +202,7 @@ var QUADRANTS = [
 ];
 var QMAP = {}; QUADRANTS.forEach(function (q) { QMAP[q.id] = q; });
 
-var store = { private: [], business: [] };
+var store = { business: [], private: [], school: [] };
 var state = { mode: "business" };
 var docRef = null, unsub = null, dragId = null, editingId = null;
 
@@ -233,8 +237,9 @@ onAuthStateChanged(auth, function (user) {
     if (unsub) unsub();
     unsub = onSnapshot(docRef, function (snap) {
       var d = snap.data() || {};
-      store.private = Array.isArray(d.private) ? d.private : [];
       store.business = Array.isArray(d.business) ? d.business : [];
+      store.private = Array.isArray(d.private) ? d.private : [];
+      store.school = Array.isArray(d.school) ? d.school : [];
       document.getElementById("syncState").textContent =
         snap.metadata.fromCache ? "Offline – wird abgeglichen" : "Synchronisiert";
       render();
@@ -247,7 +252,7 @@ onAuthStateChanged(auth, function (user) {
     appScreen.classList.remove("hidden");
   } else {
     if (unsub) { unsub(); unsub = null; }
-    docRef = null; store = { private: [], business: [] };
+    docRef = null; store = { business: [], private: [], school: [] };
     appScreen.classList.add("hidden");
     authScreen.classList.remove("hidden");
   }
