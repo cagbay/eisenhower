@@ -1,4 +1,4 @@
-const CACHE = "eisenhower-v6";
+const CACHE = "eisenhower-v7";
 const ASSETS = ["./", "./index.html", "./manifest.json"];
 
 self.addEventListener("install", (e) => {
