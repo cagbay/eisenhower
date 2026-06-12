@@ -43,6 +43,11 @@
   .signout:hover { color: var(--ink); background: #fafafa; }
   .sync { font-size: 12px; color: var(--faint); }
 
+  .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .undo { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #3f3f46; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .undo:hover { background: #fafafa; }
+  .undo:disabled { color: #d4d4d8; cursor: not-allowed; background: #fafafa; box-shadow: none; }
+
   .toggle { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
   .toggle button { border: 0; background: transparent; color: var(--muted); font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
   .toggle button.active { background: #18181b; color: #fff; }
@@ -129,19 +134,25 @@
         <button class="signout" id="signOut">Abmelden</button>
       </div>
     </div>
-    <div class="toggle" id="toggle">
-      <button data-mode="business" class="active">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        Geschäftlich
+    <div class="controls">
+      <button class="undo" id="undoBtn" disabled title="Letzte Änderung rückgängig machen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a4 4 0 0 1 0 8h-3"/></svg>
+        Rückgängig
       </button>
-      <button data-mode="private">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>
-        Privat
-      </button>
-      <button data-mode="school">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.5 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg>
-        Schule
-      </button>
+      <div class="toggle" id="toggle">
+        <button data-mode="business" class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Geschäftlich
+        </button>
+        <button data-mode="private">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>
+          Privat
+        </button>
+        <button data-mode="school">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.5 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg>
+          Schule
+        </button>
+      </div>
     </div>
   </div>
 
@@ -205,6 +216,7 @@ var QMAP = {}; QUADRANTS.forEach(function (q) { QMAP[q.id] = q; });
 var store = { business: [], private: [], school: [] };
 var state = { mode: "business" };
 var docRef = null, unsub = null, dragId = null, editingId = null;
+var history = [];
 
 var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
 var TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>';
@@ -222,6 +234,22 @@ function esc(s) {
 }
 function uid() { return Date.now() + "-" + Math.random().toString(36).slice(2, 7); }
 
+/* ---- Rückgängig-Verlauf ---- */
+function updateUndoBtn() { document.getElementById("undoBtn").disabled = history.length === 0; }
+function resetHistory() { history = []; updateUndoBtn(); }
+function pushHistory() {
+  history.push(JSON.stringify(store[state.mode]));
+  if (history.length > 50) history.shift();
+  updateUndoBtn();
+}
+function undo() {
+  if (!history.length) return;
+  editingId = null;
+  store[state.mode] = JSON.parse(history.pop());
+  updateUndoBtn();
+  render(); persist();
+}
+
 /* ---- Authentifizierung ---- */
 document.getElementById("signIn").addEventListener("click", function () {
   authErr.textContent = "";
@@ -230,16 +258,28 @@ document.getElementById("signIn").addEventListener("click", function () {
   });
 });
 document.getElementById("signOut").addEventListener("click", function () { signOut(auth); });
+document.getElementById("undoBtn").addEventListener("click", undo);
 
 onAuthStateChanged(auth, function (user) {
   if (user) {
+    resetHistory();
     docRef = doc(db, "users", user.uid);
     if (unsub) unsub();
     unsub = onSnapshot(docRef, function (snap) {
       var d = snap.data() || {};
-      store.business = Array.isArray(d.business) ? d.business : [];
-      store.private = Array.isArray(d.private) ? d.private : [];
-      store.school = Array.isArray(d.school) ? d.school : [];
+      var incoming = {
+        business: Array.isArray(d.business) ? d.business : [],
+        private: Array.isArray(d.private) ? d.private : [],
+        school: Array.isArray(d.school) ? d.school : []
+      };
+      // Echte Remote-Änderung (bestätigt, kein eigener Schreibvorgang) verwirft den Verlauf
+      if (!snap.metadata.hasPendingWrites &&
+          JSON.stringify(incoming[state.mode]) !== JSON.stringify(store[state.mode])) {
+        resetHistory();
+      }
+      store.business = incoming.business;
+      store.private = incoming.private;
+      store.school = incoming.school;
       document.getElementById("syncState").textContent =
         snap.metadata.fromCache ? "Offline – wird abgeglichen" : "Synchronisiert";
       render();
@@ -253,6 +293,7 @@ onAuthStateChanged(auth, function (user) {
   } else {
     if (unsub) { unsub(); unsub = null; }
     docRef = null; store = { business: [], private: [], school: [] };
+    resetHistory();
     appScreen.classList.add("hidden");
     authScreen.classList.remove("hidden");
   }
@@ -268,22 +309,27 @@ function persist() {
 }
 function addTask(q, text) {
   text = text.trim(); if (!text || !docRef) return;
+  pushHistory();
   store[state.mode] = store[state.mode].concat([{ id: uid(), text: text, quadrant: q, done: false, createdAt: Date.now() }]);
   render(); persist();
 }
 function toggleDone(id) {
+  pushHistory();
   store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { done: !t.done }) : t; });
   render(); persist();
 }
 function removeTask(id) {
+  pushHistory();
   store[state.mode] = store[state.mode].filter(function (t) { return t.id !== id; });
   render(); persist();
 }
 function moveTask(id, q) {
+  pushHistory();
   store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { quadrant: q }) : t; });
   render(); persist();
 }
 function clearDone() {
+  pushHistory();
   store[state.mode] = store[state.mode].filter(function (t) { return !t.done; });
   render(); persist();
 }
@@ -293,17 +339,21 @@ function commitEdit(id, text) {
   if (editingId !== id) return;
   editingId = null;
   text = (text || "").trim();
-  var changed = false;
-  store[state.mode] = store[state.mode].map(function (t) {
-    if (t.id === id && text && t.text !== text) { changed = true; return Object.assign({}, t, { text: text }); }
-    return t;
-  });
-  render();
-  if (changed) persist();
+  var cur = null;
+  for (var i = 0; i < store[state.mode].length; i++) {
+    if (store[state.mode][i].id === id) { cur = store[state.mode][i]; break; }
+  }
+  if (text && cur && cur.text !== text) {
+    pushHistory();
+    store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { text: text }) : t; });
+    render(); persist();
+  } else {
+    render();
+  }
 }
 function setMode(m) {
   if (m === state.mode) return;
-  state.mode = m; editingId = null;
+  state.mode = m; editingId = null; resetHistory();
   var btns = document.querySelectorAll("#toggle button");
   for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.mode === m);
   render();
