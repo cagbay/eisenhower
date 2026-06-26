@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arbeitszeitrechner</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    background: #f1f5f9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1e293b;
+    padding: 20px 16px;
+  }
+  .wrap { max-width: 440px; margin: 0 auto; }
+  h1 { font-size: 24px; font-weight: 700; margin: 0; }
+  .sub { font-size: 14px; color: #64748b; margin: 6px 0 20px; }
+  .card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  label { font-size: 14px; font-weight: 500; color: #475569; }
+  .valbox { display: flex; align-items: center; gap: 5px; }
+  input[type="text"] {
+    width: 76px;
+    text-align: right;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 6px 8px;
+  }
+  input[type="text"]:focus { outline: 2px solid #38bdf8; border-color: transparent; }
+  .unit { font-size: 14px; color: #64748b; }
+  .hint { font-size: 12px; color: #94a3b8; margin: 8px 0 0; }
+  input[type="range"] {
+    width: 100%;
+    margin-top: 14px;
+    accent-color: #0284c7;
+    cursor: pointer;
+  }
+  .result {
+    background: #0c4a6e;
+    border-radius: 18px;
+    padding: 20px;
+    color: #fff;
+    margin-top: 8px;
+  }
+  .total { text-align: center; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,.18); }
+  .total .lbl { font-size: 13px; letter-spacing: .05em; text-transform: uppercase; color: #bae6fd; }
+  .total .big { font-size: 38px; font-weight: 700; margin-top: 4px; }
+  .total .small { font-size: 14px; color: #7dd3fc; margin-top: 4px; }
+  .grid { display: flex; gap: 16px; padding-top: 16px; }
+  .grid > div { flex: 1; text-align: center; }
+  .grid .lbl { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: #7dd3fc; }
+  .grid .v { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .pos { color: #6ee7b7; }
+  .neg { color: #fda4af; }
+  .gohome {
+    margin-top: 12px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .gohome .t { font-size: 20px; font-weight: 700; color: #0369a1; }
+  .foot { font-size: 12px; color: #94a3b8; text-align: center; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Arbeitszeitrechner</h1>
+  <p class="sub">Beginn, Pause und Ende eingeben &ndash; Tagestotal wird sofort berechnet.</p>
+
+  <div class="card">
+    <div class="row">
+      <label>Arbeitsbeginn</label>
+      <input type="text" id="beginnTxt" value="07:30">
+    </div>
+    <input type="range" id="beginnRng" min="360" max="600" step="5" value="450">
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label>Mittagspause</label>
+      <div class="valbox"><input type="text" id="pauseTxt" value="30"><span class="unit">Min.</span></div>
+    </div>
+    <input type="range" id="pauseRng" min="30" max="180" step="5" value="30">
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label>Arbeitsende</label>
+      <input type="text" id="endeTxt" value="17:00">
+    </div>
+    <input type="range" id="endeRng" min="780" max="1200" step="5" value="1020">
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label>Soll-Arbeitszeit pro Tag</label>
+      <div class="valbox"><input type="text" id="sollTxt" value="8.4"><span class="unit">h</span></div>
+    </div>
+    <p class="hint">Standard 8.4 h (42-h-Woche) &ndash; frei anpassbar.</p>
+  </div>
+
+  <div class="result">
+    <div class="total">
+      <div class="lbl">Tagestotal netto</div>
+      <div class="big" id="nettoBig">8.40 h</div>
+      <div class="small" id="nettoSmall">= 8:00</div>
+    </div>
+    <div class="grid">
+      <div>
+        <div class="lbl">Brutto-Anwesenheit</div>
+        <div class="v" id="brutto">9:00</div>
+      </div>
+      <div>
+        <div class="lbl">Differenz zum Soll</div>
+        <div class="v" id="diff">+0:00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gohome">
+    <span style="font-size:14px;font-weight:500;color:#475569;">Wann kann ich gehen?</span>
+    <span class="t" id="gohome">17:00</span>
+  </div>
+
+  <p class="foot">Funktioniert auch &uuml;ber Mitternacht hinaus. Berechnung erfolgt lokal, keine Speicherung.</p>
+</div>
+
+<script>
+  var state = { beginn: 450, pause: 30, ende: 1020, soll: 8.4 };
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function minToHHMM(m){ var mm=((m%1440)+1440)%1440; return pad(Math.floor(mm/60))+":"+pad(mm%60); }
+  function hhmmToMin(s){
+    var mt=/^(\d{1,2}):?(\d{0,2})$/.exec(s.trim());
+    if(!mt) return null;
+    var h=parseInt(mt[1],10), m=(mt[2]===""?0:parseInt(mt[2],10));
+    if(isNaN(h)||isNaN(m)||h>23||m>59) return null;
+    return h*60+m;
+  }
+  function minToDur(m){
+    var neg=m<0, abs=Math.abs(m);
+    return (neg?"\u2212":"")+Math.floor(abs/60)+":"+pad(abs%60);
+  }
+  function minToDec(m){ return (m/60).toFixed(2); }
+
+  function render(){
+    var brutto = state.ende - state.beginn;
+    if(brutto<0) brutto+=1440;
+    var netto = brutto - state.pause;
+    var sollMin = isNaN(state.soll) ? null : Math.round(state.soll*60);
+    var diff = sollMin===null ? null : netto - sollMin;
+    var goHome = sollMin===null ? null : state.beginn + state.pause + sollMin;
+
+    document.getElementById("nettoBig").textContent = minToDec(netto)+" h";
+    document.getElementById("nettoSmall").textContent = "= "+minToDur(netto);
+    document.getElementById("brutto").textContent = minToDur(brutto);
+
+    var d = document.getElementById("diff");
+    if(diff===null){ d.textContent="\u2013"; d.className="v"; }
+    else {
+      d.textContent = (diff>=0?"+":"")+minToDur(diff);
+      d.className = "v " + (diff>=0?"pos":"neg");
+    }
+
+    var gh = document.getElementById("gohome");
+    var ghWrap = gh.parentElement;
+    if(goHome===null){ ghWrap.style.display="none"; }
+    else { ghWrap.style.display="flex"; gh.textContent = minToHHMM(goHome); }
+  }
+
+  // Zeit-Felder (Beginn / Ende)
+  function bindTime(txtId, rngId, key){
+    var txt=document.getElementById(txtId), rng=document.getElementById(rngId);
+    txt.addEventListener("input", function(){
+      var p=hhmmToMin(txt.value);
+      if(p!==null){ state[key]=p; rng.value=p; render(); }
+    });
+    txt.addEventListener("blur", function(){ txt.value=minToHHMM(state[key]); });
+    rng.addEventListener("input", function(){
+      state[key]=parseInt(rng.value,10); txt.value=minToHHMM(state[key]); render();
+    });
+  }
+  bindTime("beginnTxt","beginnRng","beginn");
+  bindTime("endeTxt","endeRng","ende");
+
+  // Pause
+  (function(){
+    var txt=document.getElementById("pauseTxt"), rng=document.getElementById("pauseRng");
+    txt.addEventListener("input", function(){
+      var v=parseInt(txt.value,10);
+      if(!isNaN(v)&&v>=0&&v<=240){ state.pause=v; rng.value=Math.max(30,Math.min(v,180)); render(); }
+    });
+    txt.addEventListener("blur", function(){ txt.value=String(state.pause); });
+    rng.addEventListener("input", function(){
+      state.pause=parseInt(rng.value,10); txt.value=String(state.pause); render();
+    });
+  })();
+
+  // Soll
+  (function(){
+    var txt=document.getElementById("sollTxt");
+    txt.addEventListener("input", function(){
+      var v=parseFloat(txt.value.replace(",","."));
+      state.soll = isNaN(v) ? NaN : v;
+      render();
+    });
+  })();
+
+  render();
+</script>
+</body>
+</html>
