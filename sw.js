@@ -1,5 +1,5 @@
-const CACHE = "eisenhower-v7";
-const ASSETS = ["./", "./index.html", "./manifest.json"];
+const CACHE = "eisenhower-v8";
+const ASSETS = ["./", "./index.html", "./manifest.json", "./arbeitszeitrechner.html"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
