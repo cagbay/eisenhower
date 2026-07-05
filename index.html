@@ -38,8 +38,6 @@
   /* Layout mit Seitenleiste */
   .app { display: flex; min-height: 100vh; }
   .sidebar { flex: 0 0 84px; width: 84px; background: #fff; border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; padding: 16px 8px; gap: 14px; position: sticky; top: 0; height: 100vh; }
-  .brand { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; width: 26px; }
-  .brand span { aspect-ratio: 1; border-radius: 4px; }
   .side-nav { display: flex; flex-direction: column; gap: 4px; width: 100%; }
   .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border: 0; background: none; border-radius: 12px; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 500; transition: background .12s, color .12s; }
   .nav-item:hover { background: #f4f4f5; color: var(--ink); }
@@ -58,7 +56,6 @@
   @media (max-width: 720px) {
     .app { flex-direction: column; }
     .sidebar { flex: none; width: 100%; height: auto; flex-direction: row; justify-content: center; gap: 6px; border-right: 0; border-bottom: 1px solid var(--line); position: static; padding: 8px; }
-    .brand { display: none; }
     .side-nav { flex-direction: row; width: auto; }
     .nav-item { padding: 8px 14px; }
   }
@@ -127,15 +124,15 @@
   .donerow { display: flex; align-items: flex-start; gap: 10px; background: #fafafa; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
   .donelist { display: flex; flex-direction: column; gap: 6px; }
 
-  /* Notizen */
+  /* Notizen – gelbe Post-it-Kacheln (Delegieren-Gelb) */
   .search { width: 100%; max-width: 440px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font-size: 14px; outline: none; margin-bottom: 16px; }
   .search:focus { border-color: #a1a1aa; }
   .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-  .note-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04); display: flex; flex-direction: column; min-height: 120px; transition: box-shadow .12s, border-color .12s; }
-  .note-card:hover { border-color: #d4d4d8; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-  .note-card h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; word-break: break-word; }
-  .note-card p { font-size: 13px; color: var(--muted); margin: 0; flex: 1; line-height: 1.4; overflow: hidden; white-space: pre-wrap; word-break: break-word; }
-  .note-card .date { font-size: 11px; color: var(--faint); margin-top: 10px; }
+  .note-card { background: #fef3c7; border: 1px solid #fde68a; border-radius: 12px; padding: 14px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.05); display: flex; flex-direction: column; min-height: 120px; transition: box-shadow .12s, border-color .12s; }
+  .note-card:hover { border-color: #fcd34d; box-shadow: 0 2px 10px rgba(180,140,10,.15); }
+  .note-card h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; color: #713f12; word-break: break-word; }
+  .note-card p { font-size: 13px; color: #92702a; margin: 0; flex: 1; line-height: 1.4; overflow: hidden; white-space: pre-wrap; word-break: break-word; }
+  .note-card .date { font-size: 11px; color: #b08a3c; margin-top: 10px; }
   .note-empty { color: var(--faint); font-style: italic; font-size: 14px; }
   .editor-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
   .back { display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font-size: 13px; color: var(--muted); cursor: pointer; }
@@ -198,10 +195,6 @@
 <!-- App -->
 <div class="app hidden" id="appScreen">
   <aside class="sidebar">
-    <div class="brand">
-      <span style="background:#f43f5e"></span><span style="background:#0ea5e9"></span>
-      <span style="background:#f59e0b"></span><span style="background:#a1a1aa"></span>
-    </div>
     <nav class="side-nav">
       <button class="nav-item active" data-tool="matrix">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -282,6 +275,20 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a4 4 0 0 1 0 8h-3"/></svg>
               Rückgängig
             </button>
+            <div class="toggle" id="noteToggle">
+              <button data-notemode="business" class="active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Geschäftlich
+              </button>
+              <button data-notemode="private">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>
+                Privat
+              </button>
+              <button data-notemode="school">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.5 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg>
+                Schule
+              </button>
+            </div>
             <button class="tool" id="newNote">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
               Neue Notiz
@@ -409,7 +416,8 @@ var state = { mode: "business" };
 var docRef = null, unsub = null, dragId = null, editingId = null;
 var history = [];
 
-var notes = [];
+var noteStore = { business: [], private: [], school: [] };
+var noteMode = "business";
 var noteQuery = "", noteEditingId = null, noteTouched = false, noteSaveTimer = null;
 var notesHistory = [];
 
@@ -455,10 +463,10 @@ function undoMatrix() {
 /* ---- Rückgängig: Notizen ---- */
 function updateUndoBtnNotes() { document.getElementById("undoBtnNotes").disabled = notesHistory.length === 0; }
 function resetNotesHistory() { notesHistory = []; updateUndoBtnNotes(); }
-function pushNotesHistory() { notesHistory.push(JSON.stringify(notes)); if (notesHistory.length > 50) notesHistory.shift(); updateUndoBtnNotes(); }
+function pushNotesHistory() { notesHistory.push(JSON.stringify(noteStore[noteMode])); if (notesHistory.length > 50) notesHistory.shift(); updateUndoBtnNotes(); }
 function undoNotes() {
   if (!notesHistory.length) return;
-  notes = JSON.parse(notesHistory.pop());
+  noteStore[noteMode] = JSON.parse(notesHistory.pop());
   noteTouched = false;
   if (noteEditingId) {
     var n = findNote(noteEditingId);
@@ -480,6 +488,16 @@ document.getElementById("signOut").addEventListener("click", function () { signO
 document.getElementById("undoBtnMatrix").addEventListener("click", undoMatrix);
 document.getElementById("undoBtnNotes").addEventListener("click", undoNotes);
 
+function readNotes(raw) {
+  if (Array.isArray(raw)) return { business: raw, private: [], school: [] };
+  if (raw && typeof raw === "object") return {
+    business: Array.isArray(raw.business) ? raw.business : [],
+    private: Array.isArray(raw.private) ? raw.private : [],
+    school: Array.isArray(raw.school) ? raw.school : []
+  };
+  return { business: [], private: [], school: [] };
+}
+
 onAuthStateChanged(auth, function (user) {
   if (user) {
     resetHistory(); resetNotesHistory();
@@ -492,22 +510,22 @@ onAuthStateChanged(auth, function (user) {
         private: Array.isArray(d.private) ? d.private : [],
         school: Array.isArray(d.school) ? d.school : []
       };
-      var incNotes = Array.isArray(d.notes) ? d.notes : [];
+      var ns = readNotes(d.notes);
 
       if (!snap.metadata.hasPendingWrites) {
         if (JSON.stringify(inc[state.mode]) !== JSON.stringify(store[state.mode])) resetHistory();
-        if (JSON.stringify(incNotes) !== JSON.stringify(notes)) resetNotesHistory();
+        if (JSON.stringify(ns[noteMode]) !== JSON.stringify(noteStore[noteMode])) resetNotesHistory();
       }
       store.business = inc.business; store.private = inc.private; store.school = inc.school;
 
-      // Beim Bearbeiten die offene Notiz lokal behalten, Rest übernehmen
+      // Beim Bearbeiten die offene Notiz lokal behalten
       if (noteEditingId) {
         var local = findNote(noteEditingId);
-        notes = incNotes.map(function (n) { return (local && n.id === noteEditingId) ? local : n; });
-        if (local && !incNotes.some(function (n) { return n.id === noteEditingId; })) notes = [local].concat(incNotes);
-      } else {
-        notes = incNotes;
+        var arr = ns[noteMode];
+        ns[noteMode] = arr.map(function (n) { return (local && n.id === noteEditingId) ? local : n; });
+        if (local && !arr.some(function (n) { return n.id === noteEditingId; })) ns[noteMode] = [local].concat(arr);
       }
+      noteStore = ns;
 
       document.getElementById("syncState").textContent = snap.metadata.fromCache ? "Offline – wird abgeglichen" : "Synchronisiert";
       render(); renderNotes();
@@ -522,7 +540,7 @@ onAuthStateChanged(auth, function (user) {
     if (unsub) { unsub(); unsub = null; }
     docRef = null;
     store = { business: [], private: [], school: [] };
-    notes = []; noteEditingId = null;
+    noteStore = { business: [], private: [], school: [] }; noteEditingId = null;
     resetHistory(); resetNotesHistory();
     appScreen.classList.add("hidden");
     authScreen.classList.remove("hidden");
@@ -640,10 +658,10 @@ function resetQuad(el) { var q = QMAP[el.dataset.q]; el.style.background = q.glo
 function clearOver() { document.querySelectorAll("#grid .quad").forEach(resetQuad); }
 
 /* ---- Notizen ---- */
-function findNote(id) { for (var i = 0; i < notes.length; i++) if (notes[i].id === id) return notes[i]; return null; }
+function findNote(id) { var arr = noteStore[noteMode]; for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return arr[i]; return null; }
 function setNoteStatus(t) { document.getElementById("noteStatus").textContent = t; }
 function showNotesList() {
-  noteEditingId = null; noteTouched = false;
+  noteEditingId = null; noteTouched = false; clearTimeout(noteSaveTimer);
   document.getElementById("noteEditor").classList.add("hidden");
   document.getElementById("notesList").classList.remove("hidden");
   renderNotes();
@@ -662,14 +680,14 @@ function openNote(id) {
 function newNote() {
   pushNotesHistory();
   var n = { id: uid(), title: "", text: "", createdAt: Date.now(), updatedAt: Date.now() };
-  notes = [n].concat(notes);
+  noteStore[noteMode] = [n].concat(noteStore[noteMode]);
   persistNotes();
   openNote(n.id);
 }
 function deleteNote() {
   if (!noteEditingId) return;
   pushNotesHistory();
-  notes = notes.filter(function (n) { return n.id !== noteEditingId; });
+  noteStore[noteMode] = noteStore[noteMode].filter(function (n) { return n.id !== noteEditingId; });
   showNotesList();
   persistNotes();
 }
@@ -685,11 +703,11 @@ function onNoteInput() {
 }
 function persistNotes() {
   if (!docRef) return;
-  setDoc(docRef, { notes: notes }, { merge: true }).catch(function (e) { console.error("Speichern fehlgeschlagen", e); });
+  setDoc(docRef, { notes: noteStore }, { merge: true }).catch(function (e) { console.error("Speichern fehlgeschlagen", e); });
 }
 function renderNotes() {
   var q = noteQuery.trim().toLowerCase();
-  var arr = notes.slice().sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+  var arr = noteStore[noteMode].slice().sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
   if (q) arr = arr.filter(function (n) { return (n.title || "").toLowerCase().indexOf(q) >= 0 || (n.text || "").toLowerCase().indexOf(q) >= 0; });
   var grid = document.getElementById("notesGrid");
   if (!arr.length) {
@@ -704,6 +722,18 @@ function renderNotes() {
   }
   updateUndoBtnNotes();
 }
+function setNoteMode(m) {
+  if (m === noteMode) return;
+  noteEditingId = null; noteTouched = false; clearTimeout(noteSaveTimer);
+  document.getElementById("noteEditor").classList.add("hidden");
+  document.getElementById("notesList").classList.remove("hidden");
+  noteMode = m;
+  noteQuery = ""; document.getElementById("noteSearch").value = "";
+  resetNotesHistory();
+  var btns = document.querySelectorAll("#noteToggle button");
+  for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].dataset.notemode === m);
+  renderNotes();
+}
 
 document.getElementById("newNote").addEventListener("click", newNote);
 document.getElementById("noteBack").addEventListener("click", function () { clearTimeout(noteSaveTimer); persistNotes(); showNotesList(); });
@@ -716,9 +746,9 @@ document.getElementById("notesGrid").addEventListener("click", function (e) {
   if (card) openNote(card.dataset.note);
 });
 
-/* ---- globale Klick-/Tastatur-Events (Matrix) ---- */
+/* ---- globale Klick-/Tastatur-Events ---- */
 document.addEventListener("click", function (e) {
-  var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode]") : null;
+  var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode],[data-notemode]") : null;
   if (!btn) return;
   if (btn.dataset.act === "toggle") toggleDone(btn.dataset.id);
   else if (btn.dataset.act === "edit") startEdit(btn.dataset.id);
@@ -727,6 +757,7 @@ document.addEventListener("click", function (e) {
     var inp = document.querySelector('input[data-add="' + btn.dataset.addbtn + '"]');
     if (inp) addTask(btn.dataset.addbtn, inp.value);
   } else if (btn.dataset.mode) setMode(btn.dataset.mode);
+  else if (btn.dataset.notemode) setNoteMode(btn.dataset.notemode);
 });
 document.getElementById("clearDone").addEventListener("click", clearDone);
 document.addEventListener("keydown", function (e) {
