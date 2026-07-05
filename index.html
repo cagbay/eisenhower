@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Eisenhower-Matrix</title>
+<title>Tools</title>
 <meta name="theme-color" content="#f4f4f5" />
 <link rel="manifest" href="manifest.json" />
 <link rel="apple-touch-icon" href="icon-192.png" />
@@ -12,17 +12,20 @@
     --bg: #f4f4f5; --card: #ffffff; --line: #e4e4e7;
     --ink: #18181b; --muted: #71717a; --faint: #a1a1aa;
     --emerald: #10b981; --emerald-dark: #059669; --rose: #f43f5e;
+    --accent: #059669; --accent-bg: #ecfdf5;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
     font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 1024px; margin: 0 auto; padding: 24px 16px; }
+  .hidden { display: none !important; }
+  svg { width: 14px; height: 14px; }
 
   /* Anmeldung */
-  .auth { min-height: 80vh; display: flex; align-items: center; justify-content: center; }
+  .wrap { max-width: 1024px; margin: 0 auto; padding: 24px 16px; }
+  .auth { min-height: 90vh; display: flex; align-items: center; justify-content: center; }
   .auth-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 40px 32px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.06); max-width: 360px; width: 100%; }
   .auth-card .mini { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 64px; margin: 0 auto 20px; }
   .auth-card .mini span { aspect-ratio: 1; border-radius: 7px; }
@@ -32,36 +35,53 @@
   .gbtn:hover { background: #fafafa; }
   .auth-err { color: var(--rose); font-size: 13px; margin-top: 16px; min-height: 18px; }
 
-  .top { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
-  .top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-  h1.title { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
-  .sub { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
-  .account { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  /* Layout mit Seitenleiste */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { flex: 0 0 84px; width: 84px; background: #fff; border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; padding: 16px 8px; gap: 14px; position: sticky; top: 0; height: 100vh; }
+  .brand { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; width: 26px; }
+  .brand span { aspect-ratio: 1; border-radius: 4px; }
+  .side-nav { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border: 0; background: none; border-radius: 12px; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 500; transition: background .12s, color .12s; }
+  .nav-item:hover { background: #f4f4f5; color: var(--ink); }
+  .nav-item.active { background: var(--accent-bg); color: var(--accent); }
+  .nav-item svg { width: 22px; height: 22px; }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 20px; }
+  .account { display: flex; align-items: center; gap: 8px; }
   .account img { width: 28px; height: 28px; border-radius: 999px; }
-  .account .who { font-size: 13px; color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .account .who { font-size: 13px; color: var(--muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .signout { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font-size: 12px; color: var(--muted); cursor: pointer; }
   .signout:hover { color: var(--ink); background: #fafafa; }
+  .panel { padding: 4px 20px 40px; }
+
+  @media (max-width: 720px) {
+    .app { flex-direction: column; }
+    .sidebar { flex: none; width: 100%; height: auto; flex-direction: row; justify-content: center; gap: 6px; border-right: 0; border-bottom: 1px solid var(--line); position: static; padding: 8px; }
+    .brand { display: none; }
+    .side-nav { flex-direction: row; width: auto; }
+    .nav-item { padding: 8px 14px; }
+  }
+
+  .phead { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+  @media (min-width: 640px) { .phead { flex-direction: row; align-items: flex-end; justify-content: space-between; } }
+  h1.title { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+  .sub { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
   .sync { font-size: 12px; color: var(--faint); }
 
   .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .undo { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #3f3f46; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
   .undo:hover { background: #fafafa; }
   .undo:disabled { color: #d4d4d8; cursor: not-allowed; background: #fafafa; box-shadow: none; }
-  .tool { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #3f3f46; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04); margin-left: auto; }
+  .tool { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #3f3f46; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
   .tool:hover { background: #fafafa; }
-  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; z-index: 50; overflow: auto; }
-  .modal-card { background: #fff; border-radius: 16px; width: 100%; max-width: 472px; box-shadow: 0 10px 40px rgba(0,0,0,.2); display: flex; flex-direction: column; overflow: hidden; max-height: calc(100vh - 48px); }
-  .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); }
-  .modal-title { font-weight: 600; font-size: 15px; }
-  .modal-close { background: none; border: 0; font-size: 18px; line-height: 1; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 8px; }
-  .modal-close:hover { background: #f4f4f5; color: var(--ink); }
-  #toolFrame { border: 0; width: 100%; height: 660px; max-height: calc(100vh - 120px); background: #f1f5f9; }
 
   .toggle { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
   .toggle button { border: 0; background: transparent; color: var(--muted); font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
   .toggle button.active { background: #18181b; color: #fff; }
+
   .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-  @media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
   .quad { border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; min-height: 224px; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: background .15s, border-color .15s; }
   .qhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .qhead .left { display: flex; align-items: center; gap: 10px; }
@@ -106,8 +126,54 @@
   .clear:hover { color: var(--rose); }
   .donerow { display: flex; align-items: flex-start; gap: 10px; background: #fafafa; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
   .donelist { display: flex; flex-direction: column; gap: 6px; }
-  .hidden { display: none !important; }
-  svg { width: 14px; height: 14px; }
+
+  /* Notizen */
+  .search { width: 100%; max-width: 440px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font-size: 14px; outline: none; margin-bottom: 16px; }
+  .search:focus { border-color: #a1a1aa; }
+  .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .note-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04); display: flex; flex-direction: column; min-height: 120px; transition: box-shadow .12s, border-color .12s; }
+  .note-card:hover { border-color: #d4d4d8; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .note-card h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; word-break: break-word; }
+  .note-card p { font-size: 13px; color: var(--muted); margin: 0; flex: 1; line-height: 1.4; overflow: hidden; white-space: pre-wrap; word-break: break-word; }
+  .note-card .date { font-size: 11px; color: var(--faint); margin-top: 10px; }
+  .note-empty { color: var(--faint); font-style: italic; font-size: 14px; }
+  .editor-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
+  .back { display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font-size: 13px; color: var(--muted); cursor: pointer; }
+  .back:hover { background: #fafafa; color: var(--ink); }
+  .editor-status { font-size: 12px; color: var(--faint); margin-left: auto; }
+  .del-note { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font-size: 13px; color: var(--rose); cursor: pointer; }
+  .del-note:hover { background: #fff1f2; }
+  .note-title { width: 100%; font-size: 22px; font-weight: 600; border: 0; outline: none; background: transparent; padding: 6px 0; color: var(--ink); }
+  .note-title::placeholder { color: var(--faint); }
+  .note-body { width: 100%; min-height: 55vh; border: 0; outline: none; background: transparent; resize: vertical; font: inherit; font-size: 15px; line-height: 1.6; color: var(--ink); padding: 6px 0; }
+  .note-body::placeholder { color: var(--faint); }
+
+  /* Arbeitszeitrechner (fest integriert, eigener Namensraum) */
+  #tool-time { max-width: 440px; }
+  #tool-time .az-sub { font-size: 14px; color: #64748b; margin: 4px 0 20px; }
+  #tool-time .az-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+  #tool-time .az-row { display: flex; align-items: center; justify-content: space-between; }
+  #tool-time label { font-size: 14px; font-weight: 500; color: #475569; }
+  #tool-time .az-valbox { display: flex; align-items: center; gap: 5px; }
+  #tool-time input[type="text"] { width: 76px; text-align: right; font-size: 18px; font-weight: 600; color: #1e293b; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9px; padding: 6px 8px; }
+  #tool-time input[type="text"]:focus { outline: 2px solid #38bdf8; border-color: transparent; }
+  #tool-time .az-unit { font-size: 14px; color: #64748b; }
+  #tool-time .az-hint { font-size: 12px; color: #94a3b8; margin: 8px 0 0; }
+  #tool-time input[type="range"] { width: 100%; margin-top: 14px; accent-color: #0284c7; cursor: pointer; }
+  #tool-time .az-result { background: #0c4a6e; border-radius: 18px; padding: 20px; color: #fff; margin-top: 8px; }
+  #tool-time .az-total { text-align: center; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,.18); }
+  #tool-time .az-total .az-lbl { font-size: 13px; letter-spacing: .05em; text-transform: uppercase; color: #bae6fd; }
+  #tool-time .az-total .az-big { font-size: 38px; font-weight: 700; margin-top: 4px; }
+  #tool-time .az-total .az-small { font-size: 14px; color: #7dd3fc; margin-top: 4px; }
+  #tool-time .az-grid { display: flex; gap: 16px; padding-top: 16px; }
+  #tool-time .az-grid > div { flex: 1; text-align: center; }
+  #tool-time .az-grid .az-lbl { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: #7dd3fc; }
+  #tool-time .az-grid .az-v { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  #tool-time .az-pos { color: #6ee7b7; }
+  #tool-time .az-neg { color: #fda4af; }
+  #tool-time .az-gohome { margin-top: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; align-items: center; justify-content: space-between; }
+  #tool-time .az-gohome .az-t { font-size: 20px; font-weight: 700; color: #0369a1; }
+  #tool-time .az-foot { font-size: 12px; color: #94a3b8; margin-top: 20px; }
 </style>
 </head>
 <body>
@@ -119,8 +185,8 @@
       <span style="background:#f43f5e"></span><span style="background:#0ea5e9"></span>
       <span style="background:#f59e0b"></span><span style="background:#a1a1aa"></span>
     </div>
-    <h1>Eisenhower-Matrix</h1>
-    <p id="authText">Melde dich an, damit deine Aufgaben auf allen Geräten synchron sind.</p>
+    <h1>Tools</h1>
+    <p id="authText">Melde dich an, damit alles auf deinen Geräten synchron ist.</p>
     <button class="gbtn" id="signIn">
       <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.4 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.1 5.3-4.6 7l7.1 5.5c4.1-3.8 6.5-9.5 6.5-17z"/><path fill="#FBBC05" d="M10.5 28.3c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.1 0 19.9 0 23.7s1 7.6 2.6 10.8l7.9-6.2z"/><path fill="#34A853" d="M24 47.4c6.4 0 11.9-2.1 15.8-5.8l-7.1-5.5c-2 1.4-4.6 2.2-8.7 2.2-6.3 0-11.6-3.7-13.5-9.1l-7.9 6.2C6.5 42 14.6 47.4 24 47.4z"/></svg>
       Mit Google anmelden
@@ -130,68 +196,171 @@
 </div>
 
 <!-- App -->
-<div class="wrap hidden" id="appScreen">
-  <div class="top">
-    <div class="top-row">
-      <div>
-        <h1 class="title">Eisenhower-Matrix</h1>
-        <p class="sub">Klick auf einen Text zum Bearbeiten, per Drag &amp; Drop verschieben. <span class="sync" id="syncState">Synchronisiert</span></p>
-      </div>
+<div class="app hidden" id="appScreen">
+  <aside class="sidebar">
+    <div class="brand">
+      <span style="background:#f43f5e"></span><span style="background:#0ea5e9"></span>
+      <span style="background:#f59e0b"></span><span style="background:#a1a1aa"></span>
+    </div>
+    <nav class="side-nav">
+      <button class="nav-item active" data-tool="matrix">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Matrix
+      </button>
+      <button class="nav-item" data-tool="notes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+        Notizen
+      </button>
+      <button class="nav-item" data-tool="time">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Zeit
+      </button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
       <div class="account">
         <img id="avatar" alt="" />
         <span class="who" id="who"></span>
         <button class="signout" id="signOut">Abmelden</button>
       </div>
-    </div>
-    <div class="controls">
-      <button class="undo" id="undoBtn" disabled title="Letzte Änderung rückgängig machen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a4 4 0 0 1 0 8h-3"/></svg>
-        Rückgängig
-      </button>
-      <div class="toggle" id="toggle">
-        <button data-mode="business" class="active">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          Geschäftlich
-        </button>
-        <button data-mode="private">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>
-          Privat
-        </button>
-        <button data-mode="school">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.5 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg>
-          Schule
-        </button>
-      </div>
-      <button class="tool" id="openTimeCalc" title="Arbeitszeitrechner öffnen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        Arbeitszeitrechner
-      </button>
-    </div>
-  </div>
+    </header>
 
-  <div class="grid" id="grid"></div>
-
-  <div class="done-card">
-    <div class="done-head">
-      <div class="left">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
-        <h2>Erledigt</h2>
-        <span class="count" id="doneCount">0</span>
+    <!-- Matrix -->
+    <section class="panel" id="panel-matrix">
+      <div class="phead">
+        <div>
+          <h1 class="title">Eisenhower-Matrix</h1>
+          <p class="sub">Klick auf einen Text zum Bearbeiten, per Drag &amp; Drop verschieben. <span class="sync" id="syncState">Synchronisiert</span></p>
+        </div>
+        <div class="controls">
+          <button class="undo" id="undoBtnMatrix" disabled title="Letzte Änderung rückgängig machen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a4 4 0 0 1 0 8h-3"/></svg>
+            Rückgängig
+          </button>
+          <div class="toggle" id="toggle">
+            <button data-mode="business" class="active">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              Geschäftlich
+            </button>
+            <button data-mode="private">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>
+              Privat
+            </button>
+            <button data-mode="school">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.5 2.5 6 2.5s6-1.5 6-2.5v-5"/><path d="M22 10v5"/></svg>
+              Schule
+            </button>
+          </div>
+        </div>
       </div>
-      <button class="clear" id="clearDone" style="display:none">Alle löschen</button>
-    </div>
-    <div id="doneList"></div>
-  </div>
-
-  <div class="modal hidden" id="toolModal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <span class="modal-title">Arbeitszeitrechner</span>
-        <button class="modal-close" id="toolClose" aria-label="Schliessen">✕</button>
+      <div class="grid" id="grid"></div>
+      <div class="done-card">
+        <div class="done-head">
+          <div class="left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            <h2>Erledigt</h2>
+            <span class="count" id="doneCount">0</span>
+          </div>
+          <button class="clear" id="clearDone" style="display:none">Alle löschen</button>
+        </div>
+        <div id="doneList"></div>
       </div>
-      <iframe id="toolFrame" title="Arbeitszeitrechner" loading="lazy"></iframe>
-    </div>
-  </div>
+    </section>
+
+    <!-- Notizen -->
+    <section class="panel hidden" id="panel-notes">
+      <div id="notesList">
+        <div class="phead">
+          <div>
+            <h1 class="title">Notizen</h1>
+            <p class="sub">Titel und Text – wird beim Tippen automatisch gespeichert.</p>
+          </div>
+          <div class="controls">
+            <button class="undo" id="undoBtnNotes" disabled title="Letzte Änderung rückgängig machen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a4 4 0 0 1 0 8h-3"/></svg>
+              Rückgängig
+            </button>
+            <button class="tool" id="newNote">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              Neue Notiz
+            </button>
+          </div>
+        </div>
+        <input class="search" id="noteSearch" type="text" placeholder="Notizen durchsuchen …" />
+        <div class="notes-grid" id="notesGrid"></div>
+      </div>
+
+      <div id="noteEditor" class="hidden">
+        <div class="editor-head">
+          <button class="back" id="noteBack">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Zurück
+          </button>
+          <span class="editor-status" id="noteStatus">Gespeichert</span>
+          <button class="del-note" id="noteDelete">Löschen</button>
+        </div>
+        <input class="note-title" id="noteTitle" type="text" placeholder="Titel" />
+        <textarea class="note-body" id="noteBody" placeholder="Notiz …"></textarea>
+      </div>
+    </section>
+
+    <!-- Zeit (Arbeitszeitrechner) -->
+    <section class="panel hidden" id="panel-time">
+      <div id="tool-time">
+        <h1 class="title">Arbeitszeitrechner</h1>
+        <p class="az-sub">Beginn, Pause und Ende eingeben – Tagestotal wird sofort berechnet.</p>
+
+        <div class="az-card">
+          <div class="az-row">
+            <label>Arbeitsbeginn</label>
+            <input type="text" id="beginnTxt" value="07:30">
+          </div>
+          <input type="range" id="beginnRng" min="360" max="600" step="5" value="450">
+        </div>
+        <div class="az-card">
+          <div class="az-row">
+            <label>Mittagspause</label>
+            <div class="az-valbox"><input type="text" id="pauseTxt" value="30"><span class="az-unit">Min.</span></div>
+          </div>
+          <input type="range" id="pauseRng" min="30" max="180" step="5" value="30">
+        </div>
+        <div class="az-card">
+          <div class="az-row">
+            <label>Arbeitsende</label>
+            <input type="text" id="endeTxt" value="17:00">
+          </div>
+          <input type="range" id="endeRng" min="780" max="1200" step="5" value="1020">
+        </div>
+        <div class="az-card">
+          <div class="az-row">
+            <label>Soll-Arbeitszeit pro Tag</label>
+            <div class="az-valbox"><input type="text" id="sollTxt" value="8.4"><span class="az-unit">h</span></div>
+          </div>
+          <p class="az-hint">Standard 8.4 h (42-h-Woche) – frei anpassbar.</p>
+        </div>
+
+        <div class="az-result">
+          <div class="az-total">
+            <div class="az-lbl">Tagestotal netto</div>
+            <div class="az-big" id="nettoBig">8.40 h</div>
+            <div class="az-small" id="nettoSmall">= 8:00</div>
+          </div>
+          <div class="az-grid">
+            <div><div class="az-lbl">Brutto-Anwesenheit</div><div class="az-v" id="brutto">9:00</div></div>
+            <div><div class="az-lbl">Differenz zum Soll</div><div class="az-v" id="diff">+0:00</div></div>
+          </div>
+        </div>
+
+        <div class="az-gohome">
+          <span style="font-size:14px;font-weight:500;color:#475569;">Wann kann ich gehen?</span>
+          <span class="az-t" id="gohome">17:00</span>
+        </div>
+        <p class="az-foot">Funktioniert auch über Mitternacht hinaus. Berechnung erfolgt lokal, keine Speicherung.</p>
+      </div>
+    </section>
+  </main>
 </div>
 
 <script type="module">
@@ -201,7 +370,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, onSnapshot, setDoc }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ====== HIER deine Firebase-Konfiguration einsetzen ====== */
+/* ====== Firebase-Konfiguration ====== */
 const firebaseConfig = {
   apiKey: "AIzaSyCzVSbjzverUz6mVMfRv4Sal55EbkXhja0",
   authDomain: "eisenhower-ef0ef.firebaseapp.com",
@@ -210,15 +379,14 @@ const firebaseConfig = {
   messagingSenderId: "350898423640",
   appId: "1:350898423640:web:b799de0108cb6edccd872d"
 };
-/* ========================================================= */
+/* ==================================== */
 
 var authScreen = document.getElementById("authScreen");
 var appScreen = document.getElementById("appScreen");
 var authErr = document.getElementById("authErr");
 
 if (firebaseConfig.apiKey.indexOf("DEIN") === 0) {
-  document.getElementById("authText").textContent =
-    "Firebase-Konfiguration fehlt noch – bitte firebaseConfig in der Datei eintragen.";
+  document.getElementById("authText").textContent = "Firebase-Konfiguration fehlt noch.";
   document.getElementById("signIn").disabled = true;
 }
 
@@ -241,6 +409,10 @@ var state = { mode: "business" };
 var docRef = null, unsub = null, dragId = null, editingId = null;
 var history = [];
 
+var notes = [];
+var noteQuery = "", noteEditingId = null, noteTouched = false, noteSaveTimer = null;
+var notesHistory = [];
+
 var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
 var TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>';
 var PLUS  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
@@ -257,20 +429,44 @@ function esc(s) {
 }
 function uid() { return Date.now() + "-" + Math.random().toString(36).slice(2, 7); }
 
-/* ---- Rückgängig-Verlauf ---- */
-function updateUndoBtn() { document.getElementById("undoBtn").disabled = history.length === 0; }
-function resetHistory() { history = []; updateUndoBtn(); }
-function pushHistory() {
-  history.push(JSON.stringify(store[state.mode]));
-  if (history.length > 50) history.shift();
-  updateUndoBtn();
+/* ---- Tool-Wechsel ---- */
+function setTool(tool) {
+  document.querySelectorAll(".nav-item").forEach(function (el) { el.classList.toggle("active", el.dataset.tool === tool); });
+  document.getElementById("panel-matrix").classList.toggle("hidden", tool !== "matrix");
+  document.getElementById("panel-notes").classList.toggle("hidden", tool !== "notes");
+  document.getElementById("panel-time").classList.toggle("hidden", tool !== "time");
 }
-function undo() {
+document.querySelectorAll(".nav-item").forEach(function (el) {
+  el.addEventListener("click", function () { setTool(el.dataset.tool); });
+});
+
+/* ---- Rückgängig: Matrix ---- */
+function updateUndoBtnMatrix() { document.getElementById("undoBtnMatrix").disabled = history.length === 0; }
+function resetHistory() { history = []; updateUndoBtnMatrix(); }
+function pushHistory() { history.push(JSON.stringify(store[state.mode])); if (history.length > 50) history.shift(); updateUndoBtnMatrix(); }
+function undoMatrix() {
   if (!history.length) return;
   editingId = null;
   store[state.mode] = JSON.parse(history.pop());
-  updateUndoBtn();
+  updateUndoBtnMatrix();
   render(); persist();
+}
+
+/* ---- Rückgängig: Notizen ---- */
+function updateUndoBtnNotes() { document.getElementById("undoBtnNotes").disabled = notesHistory.length === 0; }
+function resetNotesHistory() { notesHistory = []; updateUndoBtnNotes(); }
+function pushNotesHistory() { notesHistory.push(JSON.stringify(notes)); if (notesHistory.length > 50) notesHistory.shift(); updateUndoBtnNotes(); }
+function undoNotes() {
+  if (!notesHistory.length) return;
+  notes = JSON.parse(notesHistory.pop());
+  noteTouched = false;
+  if (noteEditingId) {
+    var n = findNote(noteEditingId);
+    if (n) { document.getElementById("noteTitle").value = n.title || ""; document.getElementById("noteBody").value = n.text || ""; }
+    else { showNotesList(); }
+  }
+  updateUndoBtnNotes();
+  persistNotes(); renderNotes();
 }
 
 /* ---- Authentifizierung ---- */
@@ -281,31 +477,40 @@ document.getElementById("signIn").addEventListener("click", function () {
   });
 });
 document.getElementById("signOut").addEventListener("click", function () { signOut(auth); });
-document.getElementById("undoBtn").addEventListener("click", undo);
+document.getElementById("undoBtnMatrix").addEventListener("click", undoMatrix);
+document.getElementById("undoBtnNotes").addEventListener("click", undoNotes);
 
 onAuthStateChanged(auth, function (user) {
   if (user) {
-    resetHistory();
+    resetHistory(); resetNotesHistory();
     docRef = doc(db, "users", user.uid);
     if (unsub) unsub();
     unsub = onSnapshot(docRef, function (snap) {
       var d = snap.data() || {};
-      var incoming = {
+      var inc = {
         business: Array.isArray(d.business) ? d.business : [],
         private: Array.isArray(d.private) ? d.private : [],
         school: Array.isArray(d.school) ? d.school : []
       };
-      // Echte Remote-Änderung (bestätigt, kein eigener Schreibvorgang) verwirft den Verlauf
-      if (!snap.metadata.hasPendingWrites &&
-          JSON.stringify(incoming[state.mode]) !== JSON.stringify(store[state.mode])) {
-        resetHistory();
+      var incNotes = Array.isArray(d.notes) ? d.notes : [];
+
+      if (!snap.metadata.hasPendingWrites) {
+        if (JSON.stringify(inc[state.mode]) !== JSON.stringify(store[state.mode])) resetHistory();
+        if (JSON.stringify(incNotes) !== JSON.stringify(notes)) resetNotesHistory();
       }
-      store.business = incoming.business;
-      store.private = incoming.private;
-      store.school = incoming.school;
-      document.getElementById("syncState").textContent =
-        snap.metadata.fromCache ? "Offline – wird abgeglichen" : "Synchronisiert";
-      render();
+      store.business = inc.business; store.private = inc.private; store.school = inc.school;
+
+      // Beim Bearbeiten die offene Notiz lokal behalten, Rest übernehmen
+      if (noteEditingId) {
+        var local = findNote(noteEditingId);
+        notes = incNotes.map(function (n) { return (local && n.id === noteEditingId) ? local : n; });
+        if (local && !incNotes.some(function (n) { return n.id === noteEditingId; })) notes = [local].concat(incNotes);
+      } else {
+        notes = incNotes;
+      }
+
+      document.getElementById("syncState").textContent = snap.metadata.fromCache ? "Offline – wird abgeglichen" : "Synchronisiert";
+      render(); renderNotes();
     }, function (err) { console.error(err); });
 
     document.getElementById("who").textContent = user.displayName || user.email || "";
@@ -315,20 +520,20 @@ onAuthStateChanged(auth, function (user) {
     appScreen.classList.remove("hidden");
   } else {
     if (unsub) { unsub(); unsub = null; }
-    docRef = null; store = { business: [], private: [], school: [] };
-    resetHistory();
+    docRef = null;
+    store = { business: [], private: [], school: [] };
+    notes = []; noteEditingId = null;
+    resetHistory(); resetNotesHistory();
     appScreen.classList.add("hidden");
     authScreen.classList.remove("hidden");
   }
 });
 
-/* ---- Datenoperationen ---- */
+/* ---- Matrix: Daten ---- */
 function persist() {
   if (!docRef) return;
   var payload = {}; payload[state.mode] = store[state.mode];
-  setDoc(docRef, payload, { merge: true }).catch(function (e) {
-    console.error("Speichern fehlgeschlagen", e);
-  });
+  setDoc(docRef, payload, { merge: true }).catch(function (e) { console.error("Speichern fehlgeschlagen", e); });
 }
 function addTask(q, text) {
   text = text.trim(); if (!text || !docRef) return;
@@ -336,26 +541,10 @@ function addTask(q, text) {
   store[state.mode] = store[state.mode].concat([{ id: uid(), text: text, quadrant: q, done: false, createdAt: Date.now() }]);
   render(); persist();
 }
-function toggleDone(id) {
-  pushHistory();
-  store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { done: !t.done }) : t; });
-  render(); persist();
-}
-function removeTask(id) {
-  pushHistory();
-  store[state.mode] = store[state.mode].filter(function (t) { return t.id !== id; });
-  render(); persist();
-}
-function moveTask(id, q) {
-  pushHistory();
-  store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { quadrant: q }) : t; });
-  render(); persist();
-}
-function clearDone() {
-  pushHistory();
-  store[state.mode] = store[state.mode].filter(function (t) { return !t.done; });
-  render(); persist();
-}
+function toggleDone(id) { pushHistory(); store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { done: !t.done }) : t; }); render(); persist(); }
+function removeTask(id) { pushHistory(); store[state.mode] = store[state.mode].filter(function (t) { return t.id !== id; }); render(); persist(); }
+function moveTask(id, q) { pushHistory(); store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { quadrant: q }) : t; }); render(); persist(); }
+function clearDone() { pushHistory(); store[state.mode] = store[state.mode].filter(function (t) { return !t.done; }); render(); persist(); }
 function startEdit(id) { editingId = id; render(); }
 function cancelEdit() { editingId = null; render(); }
 function commitEdit(id, text) {
@@ -363,16 +552,12 @@ function commitEdit(id, text) {
   editingId = null;
   text = (text || "").trim();
   var cur = null;
-  for (var i = 0; i < store[state.mode].length; i++) {
-    if (store[state.mode][i].id === id) { cur = store[state.mode][i]; break; }
-  }
+  for (var i = 0; i < store[state.mode].length; i++) { if (store[state.mode][i].id === id) { cur = store[state.mode][i]; break; } }
   if (text && cur && cur.text !== text) {
     pushHistory();
     store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { text: text }) : t; });
     render(); persist();
-  } else {
-    render();
-  }
+  } else { render(); }
 }
 function setMode(m) {
   if (m === state.mode) return;
@@ -382,7 +567,7 @@ function setMode(m) {
   render();
 }
 
-/* ---- Darstellung ---- */
+/* ---- Matrix: Darstellung ---- */
 function render() {
   var tasks = store[state.mode] || [];
   var grid = document.getElementById("grid");
@@ -437,11 +622,7 @@ function render() {
   }
 
   wireDnD();
-
-  if (editingId) {
-    var ie = document.querySelector('input[data-edit-id="' + editingId + '"]');
-    if (ie) { ie.focus(); ie.select(); }
-  }
+  if (editingId) { var ie = document.querySelector('input[data-edit-id="' + editingId + '"]'); if (ie) { ie.focus(); ie.select(); } }
 }
 
 function wireDnD() {
@@ -449,20 +630,93 @@ function wireDnD() {
     el.addEventListener("dragstart", function () { dragId = el.dataset.id; });
     el.addEventListener("dragend", function () { dragId = null; clearOver(); });
   });
-  document.querySelectorAll(".quad").forEach(function (el) {
-    el.addEventListener("dragover", function (e) {
-      e.preventDefault(); var q = QMAP[el.dataset.q];
-      el.style.background = q.over; el.style.borderColor = q.overBorder;
-    });
+  document.querySelectorAll("#grid .quad").forEach(function (el) {
+    el.addEventListener("dragover", function (e) { e.preventDefault(); var q = QMAP[el.dataset.q]; el.style.background = q.over; el.style.borderColor = q.overBorder; });
     el.addEventListener("dragleave", function () { resetQuad(el); });
-    el.addEventListener("drop", function (e) {
-      e.preventDefault(); if (dragId) moveTask(dragId, el.dataset.q); dragId = null;
-    });
+    el.addEventListener("drop", function (e) { e.preventDefault(); if (dragId) moveTask(dragId, el.dataset.q); dragId = null; });
   });
 }
 function resetQuad(el) { var q = QMAP[el.dataset.q]; el.style.background = q.glow; el.style.borderColor = q.border; }
-function clearOver() { document.querySelectorAll(".quad").forEach(resetQuad); }
+function clearOver() { document.querySelectorAll("#grid .quad").forEach(resetQuad); }
 
+/* ---- Notizen ---- */
+function findNote(id) { for (var i = 0; i < notes.length; i++) if (notes[i].id === id) return notes[i]; return null; }
+function setNoteStatus(t) { document.getElementById("noteStatus").textContent = t; }
+function showNotesList() {
+  noteEditingId = null; noteTouched = false;
+  document.getElementById("noteEditor").classList.add("hidden");
+  document.getElementById("notesList").classList.remove("hidden");
+  renderNotes();
+}
+function openNote(id) {
+  var n = findNote(id); if (!n) return;
+  noteEditingId = id; noteTouched = false;
+  document.getElementById("noteTitle").value = n.title || "";
+  document.getElementById("noteBody").value = n.text || "";
+  setNoteStatus("Gespeichert");
+  document.getElementById("notesList").classList.add("hidden");
+  document.getElementById("noteEditor").classList.remove("hidden");
+  updateUndoBtnNotes();
+  document.getElementById("noteTitle").focus();
+}
+function newNote() {
+  pushNotesHistory();
+  var n = { id: uid(), title: "", text: "", createdAt: Date.now(), updatedAt: Date.now() };
+  notes = [n].concat(notes);
+  persistNotes();
+  openNote(n.id);
+}
+function deleteNote() {
+  if (!noteEditingId) return;
+  pushNotesHistory();
+  notes = notes.filter(function (n) { return n.id !== noteEditingId; });
+  showNotesList();
+  persistNotes();
+}
+function onNoteInput() {
+  var n = findNote(noteEditingId); if (!n) return;
+  if (!noteTouched) { pushNotesHistory(); noteTouched = true; }
+  n.title = document.getElementById("noteTitle").value;
+  n.text = document.getElementById("noteBody").value;
+  n.updatedAt = Date.now();
+  setNoteStatus("Speichern …");
+  clearTimeout(noteSaveTimer);
+  noteSaveTimer = setTimeout(function () { persistNotes(); setNoteStatus("Gespeichert"); }, 600);
+}
+function persistNotes() {
+  if (!docRef) return;
+  setDoc(docRef, { notes: notes }, { merge: true }).catch(function (e) { console.error("Speichern fehlgeschlagen", e); });
+}
+function renderNotes() {
+  var q = noteQuery.trim().toLowerCase();
+  var arr = notes.slice().sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+  if (q) arr = arr.filter(function (n) { return (n.title || "").toLowerCase().indexOf(q) >= 0 || (n.text || "").toLowerCase().indexOf(q) >= 0; });
+  var grid = document.getElementById("notesGrid");
+  if (!arr.length) {
+    grid.innerHTML = '<p class="note-empty">' + (q ? "Keine Treffer." : "Noch keine Notizen.") + '</p>';
+  } else {
+    grid.innerHTML = arr.map(function (n) {
+      var title = esc(n.title && n.title.trim() ? n.title : "Ohne Titel");
+      var preview = esc((n.text || "").slice(0, 180));
+      var d = fmt(n.updatedAt || n.createdAt) || "";
+      return '<div class="note-card" data-note="' + n.id + '"><h3>' + title + '</h3><p>' + preview + '</p><div class="date">' + d + '</div></div>';
+    }).join("");
+  }
+  updateUndoBtnNotes();
+}
+
+document.getElementById("newNote").addEventListener("click", newNote);
+document.getElementById("noteBack").addEventListener("click", function () { clearTimeout(noteSaveTimer); persistNotes(); showNotesList(); });
+document.getElementById("noteDelete").addEventListener("click", deleteNote);
+document.getElementById("noteTitle").addEventListener("input", onNoteInput);
+document.getElementById("noteBody").addEventListener("input", onNoteInput);
+document.getElementById("noteSearch").addEventListener("input", function (e) { noteQuery = e.target.value; renderNotes(); });
+document.getElementById("notesGrid").addEventListener("click", function (e) {
+  var card = e.target.closest ? e.target.closest("[data-note]") : null;
+  if (card) openNote(card.dataset.note);
+});
+
+/* ---- globale Klick-/Tastatur-Events (Matrix) ---- */
 document.addEventListener("click", function (e) {
   var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode]") : null;
   if (!btn) return;
@@ -475,37 +729,65 @@ document.addEventListener("click", function (e) {
   } else if (btn.dataset.mode) setMode(btn.dataset.mode);
 });
 document.getElementById("clearDone").addEventListener("click", clearDone);
-
 document.addEventListener("keydown", function (e) {
   var t = e.target;
   if (!t || !t.dataset) return;
-  if (t.dataset.add && e.key === "Enter") {
-    addTask(t.dataset.add, t.value);
-  } else if (t.dataset.editId) {
+  if (t.dataset.add && e.key === "Enter") addTask(t.dataset.add, t.value);
+  else if (t.dataset.editId) {
     if (e.key === "Enter") { e.preventDefault(); commitEdit(t.dataset.editId, t.value); }
     else if (e.key === "Escape") { e.preventDefault(); cancelEdit(); }
   }
 });
-document.addEventListener("focusout", function (e) {
-  if (e.target && e.target.dataset && e.target.dataset.editId) {
-    commitEdit(e.target.dataset.editId, e.target.value);
-  }
-});
 
-/* ---- Weitere Tools ---- */
-var toolModal = document.getElementById("toolModal");
-var toolFrame = document.getElementById("toolFrame");
-function openTool() {
-  if (!toolFrame.getAttribute("src")) toolFrame.setAttribute("src", "arbeitszeitrechner.html");
-  toolModal.classList.remove("hidden");
-}
-function closeTool() { toolModal.classList.add("hidden"); }
-document.getElementById("openTimeCalc").addEventListener("click", openTool);
-document.getElementById("toolClose").addEventListener("click", closeTool);
-toolModal.addEventListener("click", function (e) { if (e.target === toolModal) closeTool(); });
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape" && !toolModal.classList.contains("hidden")) closeTool();
-});
+/* ---- Arbeitszeitrechner (eigener Namensraum) ---- */
+(function () {
+  var st = { beginn: 450, pause: 30, ende: 1020, soll: 8.4 };
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function minToHHMM(m) { var mm = ((m % 1440) + 1440) % 1440; return pad(Math.floor(mm / 60)) + ":" + pad(mm % 60); }
+  function hhmmToMin(s) {
+    var mt = /^(\d{1,2}):?(\d{0,2})$/.exec(s.trim());
+    if (!mt) return null;
+    var h = parseInt(mt[1], 10), m = (mt[2] === "" ? 0 : parseInt(mt[2], 10));
+    if (isNaN(h) || isNaN(m) || h > 23 || m > 59) return null;
+    return h * 60 + m;
+  }
+  function minToDur(m) { var neg = m < 0, abs = Math.abs(m); return (neg ? "\u2212" : "") + Math.floor(abs / 60) + ":" + pad(abs % 60); }
+  function minToDec(m) { return (m / 60).toFixed(2); }
+  function draw() {
+    var brutto = st.ende - st.beginn; if (brutto < 0) brutto += 1440;
+    var netto = brutto - st.pause;
+    var sollMin = isNaN(st.soll) ? null : Math.round(st.soll * 60);
+    var diff = sollMin === null ? null : netto - sollMin;
+    var goHome = sollMin === null ? null : st.beginn + st.pause + sollMin;
+    document.getElementById("nettoBig").textContent = minToDec(netto) + " h";
+    document.getElementById("nettoSmall").textContent = "= " + minToDur(netto);
+    document.getElementById("brutto").textContent = minToDur(brutto);
+    var d = document.getElementById("diff");
+    if (diff === null) { d.textContent = "\u2013"; d.className = "az-v"; }
+    else { d.textContent = (diff >= 0 ? "+" : "") + minToDur(diff); d.className = "az-v " + (diff >= 0 ? "az-pos" : "az-neg"); }
+    var gh = document.getElementById("gohome"); var ghWrap = gh.parentElement;
+    if (goHome === null) { ghWrap.style.display = "none"; } else { ghWrap.style.display = "flex"; gh.textContent = minToHHMM(goHome); }
+  }
+  function bindTime(txtId, rngId, key) {
+    var txt = document.getElementById(txtId), rng = document.getElementById(rngId);
+    txt.addEventListener("input", function () { var p = hhmmToMin(txt.value); if (p !== null) { st[key] = p; rng.value = p; draw(); } });
+    txt.addEventListener("blur", function () { txt.value = minToHHMM(st[key]); });
+    rng.addEventListener("input", function () { st[key] = parseInt(rng.value, 10); txt.value = minToHHMM(st[key]); draw(); });
+  }
+  bindTime("beginnTxt", "beginnRng", "beginn");
+  bindTime("endeTxt", "endeRng", "ende");
+  (function () {
+    var txt = document.getElementById("pauseTxt"), rng = document.getElementById("pauseRng");
+    txt.addEventListener("input", function () { var v = parseInt(txt.value, 10); if (!isNaN(v) && v >= 0 && v <= 240) { st.pause = v; rng.value = Math.max(30, Math.min(v, 180)); draw(); } });
+    txt.addEventListener("blur", function () { txt.value = String(st.pause); });
+    rng.addEventListener("input", function () { st.pause = parseInt(rng.value, 10); txt.value = String(st.pause); draw(); });
+  })();
+  (function () {
+    var txt = document.getElementById("sollTxt");
+    txt.addEventListener("input", function () { var v = parseFloat(txt.value.replace(",", ".")); st.soll = isNaN(v) ? NaN : v; draw(); });
+  })();
+  draw();
+})();
 
 if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
   navigator.serviceWorker.register("sw.js").catch(function () {});
