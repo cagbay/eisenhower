@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Atemtrainer</title>
+<style>
+  :root{
+    --inhale:#12b598;
+    --exhale:#e08b3c;
+    --hold:#5f87b8;
+    --ink:#1d3a42;
+    --muted:#68858e;
+    --line:rgba(29,58,66,.12);
+    --card:rgba(255,255,255,.55);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(90% 60% at 50% 0%, #ffffff 0%, transparent 60%),
+      radial-gradient(120% 90% at 50% 100%, #dcebe9 0%, transparent 70%),
+      #edf4f4;
+    min-height:100dvh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:20px 16px calc(24px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  /* ambient glow that breathes with the phase */
+  .ambient{
+    position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(circle at 50% 46%, var(--glow-col,rgba(18,181,152,.18)) 0%, transparent var(--glow-r,34%));
+    transition:background 1.2s ease;
+  }
+  .wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%}
+
+  .picker{
+    display:flex;gap:8px;overflow-x:auto;max-width:100%;
+    padding:4px 2px 10px;scrollbar-width:none;
+  }
+  .picker::-webkit-scrollbar{display:none}
+  .tab{
+    flex:0 0 auto;font:inherit;font-size:13.5px;letter-spacing:.3px;
+    color:var(--muted);background:var(--card);
+    border:1px solid rgba(29,58,66,.12);
+    padding:9px 15px;border-radius:999px;cursor:pointer;
+    transition:all .25s ease;white-space:nowrap;
+    backdrop-filter:blur(6px);
+  }
+  .tab:focus-visible{outline:2px solid var(--inhale);outline-offset:2px}
+  .tab.on{
+    color:#fff;background:var(--inhale);border-color:var(--inhale);font-weight:600;
+    box-shadow:0 0 16px rgba(18,181,152,.45),0 0 36px rgba(18,181,152,.20);
+  }
+
+  .desc{
+    max-width:430px;text-align:center;color:var(--muted);
+    font-size:13.5px;line-height:1.5;min-height:42px;margin-top:2px;
+  }
+
+  .info{max-width:430px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .info-card{
+    position:relative;
+    background:linear-gradient(160deg, rgba(255,255,255,.85) 0%, rgba(255,255,255,.55) 100%);
+    border:1px solid rgba(29,58,66,.10);
+    border-radius:16px;padding:12px 14px;
+    backdrop-filter:blur(8px);
+    box-shadow:0 6px 18px rgba(29,58,66,.08), inset 0 1px 0 rgba(255,255,255,.9);
+    overflow:hidden;
+  }
+  .info-card::before{
+    content:"";position:absolute;top:-40%;left:-20%;width:70%;height:80%;
+    background:radial-gradient(circle, rgba(255,255,255,.7) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .info-card h3{
+    font-size:10.5px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+    color:var(--muted);margin-bottom:6px;
+  }
+  .info-card p{font-size:13px;line-height:1.5;color:var(--ink)}
+  .info-card.benefit h3{color:var(--inhale);text-shadow:0 0 10px rgba(18,181,152,.35)}
+  .info-card.dose h3{color:var(--exhale);text-shadow:0 0 10px rgba(224,139,60,.35)}
+  @media (max-width:420px){.info{grid-template-columns:1fr}}
+
+  .phase{text-align:center;height:58px;margin-top:14px}
+  .phase .word{
+    font-size:29px;font-weight:300;letter-spacing:.5px;
+    transition:color .5s ease,text-shadow .5s ease;
+  }
+  .phase .count{
+    display:block;margin-top:2px;font-size:12.5px;letter-spacing:3px;text-transform:uppercase;
+    color:var(--muted);font-variant-numeric:tabular-nums;
+  }
+
+  .stage{width:min(74vw,320px);aspect-ratio:1;position:relative;margin-top:4px}
+  svg{width:100%;height:100%;display:block;overflow:visible}
+  .side{fill:none;stroke:var(--line);stroke-width:2;stroke-linecap:round;transition:stroke .4s ease,filter .4s ease}
+  .nostril{transition:all .4s ease}
+  .nostril-label{font-size:15px;fill:var(--muted);letter-spacing:1px}
+  .hidden{display:none}
+
+  @keyframes drift{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .particles{transform-origin:200px 200px;animation:drift 46s linear infinite}
+  .particles circle{transition:fill .8s ease}
+  @media (prefers-reduced-motion: reduce){
+    .particles{animation:none}
+    .ambient{transition:none}
+  }
+
+  .meta{color:var(--muted);font-size:12.5px;letter-spacing:2px;text-transform:uppercase;font-variant-numeric:tabular-nums;margin-top:10px}
+
+  .controls{display:flex;gap:12px;align-items:center;margin-top:16px}
+  button.ctrl{
+    font:inherit;color:var(--ink);
+    background:rgba(255,255,255,.7);
+    border:1px solid rgba(29,58,66,.14);
+    padding:12px 26px;border-radius:999px;cursor:pointer;letter-spacing:.3px;
+    transition:background .2s ease,box-shadow .3s ease,transform .05s ease;
+    backdrop-filter:blur(6px);
+  }
+  button.ctrl:hover{background:rgba(255,255,255,.95)}
+  button.ctrl:active{transform:scale(.97)}
+  button.ctrl:focus-visible{outline:2px solid var(--inhale);outline-offset:2px}
+  .primary{
+    background:rgba(18,181,152,.14);border-color:rgba(18,181,152,.5);
+    box-shadow:0 0 14px rgba(18,181,152,.25);
+  }
+  .primary:hover{background:rgba(18,181,152,.22);box-shadow:0 0 22px rgba(18,181,152,.4)}
+</style>
+</head>
+<body>
+<div class="ambient" id="ambient"></div>
+<div class="wrap">
+
+  <div class="picker" role="tablist" id="picker"></div>
+  <p class="desc" id="desc"></p>
+
+  <div class="info">
+    <div class="info-card benefit"><h3>Was es bringt</h3><p id="benefit"></p></div>
+    <div class="info-card dose"><h3>Empfehlung</h3><p id="dose"></p></div>
+  </div>
+
+  <div class="phase" aria-live="polite">
+    <span class="word" id="word">Bereit</span>
+    <span class="count" id="count">Tippe auf Starten</span>
+  </div>
+
+  <div class="stage">
+    <svg viewBox="0 0 400 400" aria-hidden="true">
+      <defs>
+        <radialGradient id="coreGrad">
+          <stop offset="0%"  stop-color="#ffffff" stop-opacity=".9"/>
+          <stop offset="35%" stop-color="var(--pc,#12b598)" stop-opacity=".30"/>
+          <stop offset="78%" stop-color="var(--pc,#12b598)" stop-opacity=".14"/>
+          <stop offset="100%" stop-color="var(--pc,#12b598)" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="soft" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="6"/>
+        </filter>
+        <filter id="softer" x="-120%" y="-120%" width="340%" height="340%">
+          <feGaussianBlur stdDeviation="14"/>
+        </filter>
+      </defs>
+
+      <g id="boxG">
+        <line class="side" id="s0" x1="100" y1="300" x2="100" y2="100"/>
+        <line class="side" id="s1" x1="100" y1="100" x2="300" y2="100"/>
+        <line class="side" id="s2" x1="300" y1="100" x2="300" y2="300"/>
+        <line class="side" id="s3" x1="300" y1="300" x2="100" y2="300"/>
+      </g>
+
+      <g id="noseG" class="hidden">
+        <circle class="nostril" id="nLh" cx="120" cy="330" r="26" fill="none" filter="url(#softer)"/>
+        <circle class="nostril" id="nRh" cx="280" cy="330" r="26" fill="none" filter="url(#softer)"/>
+        <circle class="nostril" id="nL" cx="120" cy="330" r="26" fill="rgba(255,255,255,.6)" stroke="rgba(29,58,66,.25)" stroke-width="1.5"/>
+        <circle class="nostril" id="nR" cx="280" cy="330" r="26" fill="rgba(255,255,255,.6)" stroke="rgba(29,58,66,.25)" stroke-width="1.5"/>
+        <text class="nostril-label" x="120" y="336" text-anchor="middle">L</text>
+        <text class="nostril-label" x="280" y="336" text-anchor="middle">R</text>
+      </g>
+
+      <!-- halo behind the core -->
+      <circle id="halo" cx="200" cy="200" r="55" fill="var(--pc,#12b598)" opacity=".10" filter="url(#softer)"/>
+      <!-- luminous core -->
+      <circle id="center" cx="200" cy="200" r="40" fill="url(#coreGrad)"/>
+      <circle id="centerRim" cx="200" cy="200" r="40" fill="none" stroke="var(--pc,#12b598)" stroke-opacity=".5" stroke-width="1.5"/>
+      <!-- plankton particles -->
+      <g class="particles" id="particles"></g>
+
+      <!-- orb trail + orb (box only) -->
+      <g id="trailG"></g>
+      <circle id="orbHalo" cx="100" cy="300" r="16" fill="#12b598" opacity=".35" filter="url(#soft)"/>
+      <circle id="orb" cx="100" cy="300" r="7.5" fill="#ffffff" stroke="rgba(29,58,66,.25)" stroke-width="1"/>
+
+      <!-- progress ring (circle techniques) -->
+      <circle id="ringBg" cx="200" cy="200" r="122" fill="none" stroke="rgba(29,58,66,.08)" stroke-width="2" class="hidden"/>
+      <circle id="ring" cx="200" cy="200" r="122" fill="none" stroke="var(--pc,#12b598)" stroke-opacity=".55" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="766.5" stroke-dashoffset="766.5" transform="rotate(-90 200 200)" class="hidden" filter="url(#soft)"/>
+    </svg>
+  </div>
+
+  <div class="meta"><span id="cycles">0</span> Runden</div>
+
+  <div class="controls">
+    <button class="ctrl primary" id="toggle">Starten</button>
+    <button class="ctrl" id="reset">Zurücksetzen</button>
+  </div>
+
+</div>
+<script>
+(function(){
+  const COL={in:"#12b598",out:"#e08b3c",hold:"#5f87b8"};
+
+  const TECHS=[
+    {id:"box",name:"Boxatmen",
+     desc:"Gleichmässig wie ein Quadrat: einatmen, halten, ausatmen, halten, je 4 Sekunden. Klärt den Kopf vor anspruchsvollen Aufgaben.",
+     benefit:"Senkt Stress und schärft die Konzentration. Der gleichmässige Rhythmus stabilisiert Puls und Aufmerksamkeit, deshalb wird die Technik auch von Einsatzkräften genutzt.",
+     dose:"3 bis 5 Minuten, etwa 12 bis 20 Runden. Ideal vor einer Prüfung, Sitzung oder anspruchsvollen Aufgabe, gerne täglich.",
+     phases:[{word:"Einatmen",t:4,type:"in"},{word:"Halten",t:4,type:"hold"},{word:"Ausatmen",t:4,type:"out"},{word:"Halten",t:4,type:"hold"}],
+     box:true},
+    {id:"478",name:"4 7 8",
+     desc:"4 Sekunden einatmen, 7 halten, 8 langsam ausatmen. Die lange Ausatmung beruhigt stark, beliebt vor dem Einschlafen.",
+     benefit:"Fährt das Nervensystem stark herunter und kann das Einschlafen erleichtern. Auch hilfreich bei aufkommender Anspannung oder innerer Unruhe.",
+     dose:"4 Runden am Stück, maximal 8. Am besten abends im Bett oder zweimal täglich. Anfangs kann leichter Schwindel auftreten, dann Pause machen.",
+     phases:[{word:"Einatmen",t:4,type:"in"},{word:"Halten",t:7,type:"hold"},{word:"Ausatmen",t:8,type:"out"}]},
+    {id:"long",name:"Verlängerte Ausatmung",
+     desc:"4 Sekunden ein, 6 Sekunden aus, ohne Halten. Sanftester Einstieg: sobald die Ausatmung länger ist, schaltet der Körper auf Erholung.",
+     benefit:"Aktiviert die Entspannungsantwort des Körpers, senkt Puls und Blutdruck sanft. Unauffällig genug für unterwegs, im Zug oder im Büro.",
+     dose:"5 bis 10 Minuten am Stück oder immer wieder kurz über den Tag verteilt. Als tägliche Grundtechnik geeignet, keine Nebenwirkungen bekannt.",
+     phases:[{word:"Einatmen",t:4,type:"in"},{word:"Ausatmen",t:6,type:"out"}]},
+    {id:"nose",name:"Wechselatmung",
+     desc:"Rechtes Nasenloch zuhalten, links einatmen. Dann links zuhalten, rechts ausatmen und gleich rechts wieder ein. Wirkt ausgleichend und zentrierend.",
+     benefit:"Wirkt ausgleichend und zentrierend, gut bei innerer Unruhe oder zur Vorbereitung auf Meditation. Fördert ruhige, bewusste Nasenatmung.",
+     dose:"5 bis 10 Minuten, ruhig im Sitzen. Gut morgens zum Start oder abends zum Runterfahren, 3 bis 5 mal pro Woche oder täglich.",
+     phases:[{word:"Links einatmen",t:4,type:"in",n:"L"},{word:"Halten",t:4,type:"hold"},{word:"Rechts ausatmen",t:6,type:"out",n:"R"},{word:"Rechts einatmen",t:4,type:"in",n:"R"},{word:"Halten",t:4,type:"hold"},{word:"Links ausatmen",t:6,type:"out",n:"L"}],
+     nose:true},
+    {id:"sigh",name:"Physiologischer Seufzer",
+     desc:"Zwei kurze Einatmungen durch die Nase, dann eine lange Ausatmung durch den Mund. Ein bis drei Zyklen genügen zum schnellen Runterkommen.",
+     benefit:"Schnellste bekannte Methode, um akute Anspannung zu senken. Die doppelte Einatmung öffnet zusammengefallene Lungenbläschen, die lange Ausatmung entlädt den Druck spürbar.",
+     dose:"1 bis 3 Zyklen genügen, bei Bedarf mehrmals täglich. Perfekt zwischen zwei Terminen, nach einem schwierigen Gespräch oder im Stau.",
+     phases:[{word:"Einatmen",t:1.6,type:"in"},{word:"Nochmals kurz ein",t:0.9,type:"in2"},{word:"Lang ausatmen",t:6,type:"out"}]}
+  ];
+
+  const R_MIN=40,R_MAX=100,L=100,Rr=300,T=100,B=300,TRAIL_N=14;
+  const $=id=>document.getElementById(id);
+  const orb=$("orb"),orbHalo=$("orbHalo"),center=$("center"),centerRim=$("centerRim"),halo=$("halo"),
+        wordEl=$("word"),countEl=$("count"),cyclesEl=$("cycles"),
+        toggle=$("toggle"),resetB=$("reset"),picker=$("picker"),
+        descEl=$("desc"),benefitEl=$("benefit"),doseEl=$("dose"),
+        boxG=$("boxG"),noseG=$("noseG"),ring=$("ring"),ringBg=$("ringBg"),
+        nL=$("nL"),nR=$("nR"),nLh=$("nLh"),nRh=$("nRh"),
+        trailG=$("trailG"),particlesG=$("particles"),ambient=$("ambient"),
+        rootStyle=document.documentElement.style;
+  const sides=[0,1,2,3].map(i=>$("s"+i));
+
+  // plankton particles at random radii/angles
+  const P_N=9,parts=[];
+  for(let i=0;i<P_N;i++){
+    const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    const a=Math.random()*Math.PI*2,rr=0.3+Math.random()*0.6;
+    c.setAttribute("r",(1+Math.random()*1.6).toFixed(1));
+    c.setAttribute("fill","rgba(18,181,152,.5)");
+    particlesG.appendChild(c);
+    parts.push({el:c,a,rr,sp:0.4+Math.random()*0.8});
+  }
+
+  // trail elements
+  const trail=[];
+  for(let i=0;i<TRAIL_N;i++){
+    const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    c.setAttribute("r",(6.5*(1-i/TRAIL_N)).toFixed(1));
+    c.setAttribute("opacity",(0.30*(1-i/TRAIL_N)).toFixed(2));
+    trailG.appendChild(c);
+    trail.push({el:c,x:100,y:300});
+  }
+
+  let tech=TECHS[0],running=false,startTs=0,elapsed=0,raf=null,frame=0;
+
+  TECHS.forEach((t,i)=>{
+    const b=document.createElement("button");
+    b.className="tab"+(i===0?" on":"");
+    b.textContent=t.name;b.setAttribute("role","tab");
+    b.addEventListener("click",()=>selectTech(t,b));
+    picker.appendChild(b);
+  });
+
+  function selectTech(t,btn){
+    tech=t;
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+    btn.classList.add("on");
+    descEl.textContent=t.desc;benefitEl.textContent=t.benefit;doseEl.textContent=t.dose;
+    boxG.classList.toggle("hidden",!t.box);
+    orb.classList.toggle("hidden",!t.box);
+    orbHalo.classList.toggle("hidden",!t.box);
+    trailG.classList.toggle("hidden",!t.box);
+    noseG.classList.toggle("hidden",!t.nose);
+    ring.classList.toggle("hidden",!!t.box);
+    ringBg.classList.toggle("hidden",!!t.box);
+    hardReset();
+  }
+
+  const cycleLen=()=>tech.phases.reduce((a,p)=>a+p.t,0);
+
+  function phaseAt(sec){
+    const c=cycleLen(),cy=Math.floor(sec/c);
+    let rem=sec-cy*c;
+    for(let i=0;i<tech.phases.length;i++){
+      if(rem<tech.phases[i].t)return{i,p:rem/tech.phases[i].t,rem:tech.phases[i].t-rem,cycles:cy};
+      rem-=tech.phases[i].t;
+    }
+    return{i:tech.phases.length-1,p:1,rem:0,cycles:cy};
+  }
+
+  const ease=p=>p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+
+  function radiusFor(idx,p){
+    const ph=tech.phases[idx];
+    if(tech.id==="sigh"){
+      if(ph.type==="in")return 40+(85-40)*p;
+      if(ph.type==="in2")return 85+(100-85)*p;
+      return 100-(100-40)*ease(p);
+    }
+    if(ph.type==="in")return R_MIN+(R_MAX-R_MIN)*ease(p);
+    if(ph.type==="out")return R_MAX-(R_MAX-R_MIN)*ease(p);
+    const prev=tech.phases[(idx-1+tech.phases.length)%tech.phases.length];
+    return(prev.type==="in"||prev.type==="in2")?R_MAX:R_MIN;
+  }
+
+  const colFor=t=>t==="in"||t==="in2"?COL.in:t==="out"?COL.out:COL.hold;
+  const hexA=(hex,a)=>{const n=parseInt(hex.slice(1),16);return`rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;};
+
+  function boxPos(idx,p){
+    if(idx===0)return{x:L,y:B-(B-T)*p};
+    if(idx===1)return{x:L+(Rr-L)*p,y:T};
+    if(idx===2)return{x:Rr,y:T+(B-T)*p};
+    return{x:Rr-(Rr-L)*p,y:B};
+  }
+
+  function render(ms){
+    const{i,p,rem,cycles}=phaseAt(ms/1000);
+    const ph=tech.phases[i];
+    const hex=colFor(ph.type);
+    const r=radiusFor(i,p);
+
+    rootStyle.setProperty("--pc",hex);
+
+    // core + rim + halo breathe together
+    center.setAttribute("r",r.toFixed(2));
+    centerRim.setAttribute("r",r.toFixed(2));
+    centerRim.setAttribute("stroke",hex);
+    halo.setAttribute("r",(r*1.55).toFixed(2));
+    halo.setAttribute("fill",hex);
+    halo.setAttribute("opacity",(0.10+0.14*(r-R_MIN)/(R_MAX-R_MIN)).toFixed(3));
+
+    // ambient background glow follows radius and colour
+    ambient.style.setProperty("--glow-col",hexA(hex,0.12+0.12*(r-R_MIN)/(R_MAX-R_MIN)));
+    ambient.style.setProperty("--glow-r",(26+(r-R_MIN)/(R_MAX-R_MIN)*22).toFixed(0)+"%");
+
+    // particles hug the core edge
+    frame++;
+    parts.forEach(pt=>{
+      const ang=pt.a+ms/1000*0.08*pt.sp;
+      const pr=r*pt.rr*0.9;
+      pt.el.setAttribute("cx",(200+Math.cos(ang)*pr).toFixed(1));
+      pt.el.setAttribute("cy",(200+Math.sin(ang)*pr).toFixed(1));
+      pt.el.setAttribute("fill",hexA(hex,0.30+0.35*pt.rr));
+    });
+
+    if(tech.box){
+      const pt=boxPos(i,p);
+      // shift trail every other frame for a longer tail
+      if(frame%2===0){
+        for(let k=trail.length-1;k>0;k--){trail[k].x=trail[k-1].x;trail[k].y=trail[k-1].y;}
+        trail[0].x=pt.x;trail[0].y=pt.y;
+      }
+      trail.forEach(t=>{
+        t.el.setAttribute("cx",t.x.toFixed(1));t.el.setAttribute("cy",t.y.toFixed(1));
+        t.el.setAttribute("fill",hex);
+      });
+      orb.setAttribute("cx",pt.x.toFixed(2));orb.setAttribute("cy",pt.y.toFixed(2));
+      orbHalo.setAttribute("cx",pt.x.toFixed(2));orbHalo.setAttribute("cy",pt.y.toFixed(2));
+      orbHalo.setAttribute("fill",hex);
+      sides.forEach((s,k)=>{
+        const on=k===i;
+        s.setAttribute("stroke",on?hex:"var(--line)");
+        s.style.filter=on?`drop-shadow(0 0 6px ${hexA(hex,.8)})`:"none";
+      });
+    }else{
+      const c=cycleLen(),inC=(ms/1000)%c;
+      ring.setAttribute("stroke-dashoffset",(766.5*(1-inC/c)).toFixed(1));
+      ring.setAttribute("stroke",hex);
+    }
+
+    if(tech.nose){
+      const act=ph.n;
+      [[nL,nLh,"L"],[nR,nRh,"R"]].forEach(([el,hl,side])=>{
+        const on=act===side;
+        el.setAttribute("fill",on?hexA(hex,.28):"rgba(255,255,255,.6)");
+        el.setAttribute("stroke",on?hex:"rgba(29,58,66,.25)");
+        hl.setAttribute("fill",on?hexA(hex,.5):"transparent");
+      });
+    }
+
+    wordEl.textContent=ph.word;
+    wordEl.style.color=hex;
+    wordEl.style.textShadow=`0 0 18px ${hexA(hex,.40)}`;
+    countEl.textContent=Math.ceil(rem);
+    cyclesEl.textContent=cycles;
+  }
+
+  function loop(now){if(!running)return;render(elapsed+(now-startTs));raf=requestAnimationFrame(loop);}
+  function start(){running=true;startTs=performance.now();toggle.textContent="Pause";toggle.classList.remove("primary");raf=requestAnimationFrame(loop);}
+  function pause(){running=false;elapsed+=performance.now()-startTs;if(raf)cancelAnimationFrame(raf);toggle.textContent="Weiter";toggle.classList.add("primary");}
+  function hardReset(){
+    running=false;if(raf)cancelAnimationFrame(raf);elapsed=0;
+    toggle.textContent="Starten";toggle.classList.add("primary");
+    trail.forEach(t=>{t.x=tech.box?100:-50;t.y=tech.box?300:-50;});
+    render(0);
+    wordEl.textContent="Bereit";wordEl.style.color="var(--ink)";wordEl.style.textShadow="none";
+    countEl.textContent="Tippe auf Starten";cyclesEl.textContent="0";
+  }
+
+  toggle.addEventListener("click",()=>running?pause():start());
+  resetB.addEventListener("click",hardReset);
+
+  descEl.textContent=tech.desc;benefitEl.textContent=tech.benefit;doseEl.textContent=tech.dose;
+  render(0);
+})();
+</script>
+</body>
+</html>
