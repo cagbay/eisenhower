@@ -181,7 +181,7 @@
       <circle id="halo" cx="200" cy="200" r="55" fill="var(--pc,#12b598)" opacity=".10" filter="url(#softer)"/>
       <!-- luminous core -->
       <circle id="center" cx="200" cy="200" r="40" fill="url(#coreGrad)"/>
-      <circle id="centerRim" cx="200" cy="200" r="40" fill="none" stroke="var(--pc,#12b598)" stroke-opacity=".5" stroke-width="1.5"/>
+      <circle id="centerRim" cx="200" cy="200" r="40" fill="none" stroke="var(--pc,#12b598)" stroke-opacity=".95" stroke-width="3"/>
       <!-- plankton particles -->
       <g class="particles" id="particles"></g>
 
@@ -191,21 +191,23 @@
       <circle id="orb" cx="100" cy="300" r="7.5" fill="#ffffff" stroke="rgba(29,58,66,.25)" stroke-width="1"/>
 
       <!-- progress ring (circle techniques) -->
-      <circle id="ringBg" cx="200" cy="200" r="122" fill="none" stroke="rgba(29,58,66,.08)" stroke-width="2" class="hidden"/>
-      <circle id="ring" cx="200" cy="200" r="122" fill="none" stroke="var(--pc,#12b598)" stroke-opacity=".55" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="766.5" stroke-dashoffset="766.5" transform="rotate(-90 200 200)" class="hidden" filter="url(#soft)"/>
+      <g id="segG" class="hidden"></g>
+      <g id="tickG" class="hidden"></g>
+      <circle id="ringBg" cx="200" cy="200" r="122" fill="none" stroke="rgba(29,58,66,.12)" stroke-width="4" class="hidden"/>
+      <circle id="ring" cx="200" cy="200" r="122" fill="none" stroke="var(--pc,#12b598)" stroke-opacity=".95" stroke-width="4" stroke-linecap="round" stroke-dasharray="766.5" stroke-dashoffset="766.5" transform="rotate(-90 200 200)" class="hidden" style="filter:drop-shadow(0 0 5px var(--pc,#12b598))"/>
     </svg>
   </div>
 
   <div class="meta"><span id="cycles">0</span> Runden</div>
 
-  <div class="info">
-    <div class="info-card benefit"><h3>Was es bringt</h3><p id="benefit"></p></div>
-    <div class="info-card dose"><h3>Empfehlung</h3><p id="dose"></p></div>
-  </div>
-
   <div class="controls">
     <button class="ctrl primary" id="toggle">Starten</button>
     <button class="ctrl" id="reset">Zurücksetzen</button>
+  </div>
+
+  <div class="info">
+    <div class="info-card benefit"><h3>Was es bringt</h3><p id="benefit"></p></div>
+    <div class="info-card dose"><h3>Empfehlung</h3><p id="dose"></p></div>
   </div>
 
 </div>
@@ -249,7 +251,7 @@
         wordEl=$("word"),countEl=$("count"),cyclesEl=$("cycles"),
         toggle=$("toggle"),resetB=$("reset"),picker=$("picker"),
         descEl=$("desc"),benefitEl=$("benefit"),doseEl=$("dose"),
-        boxG=$("boxG"),noseG=$("noseG"),ring=$("ring"),ringBg=$("ringBg"),
+        boxG=$("boxG"),noseG=$("noseG"),ring=$("ring"),ringBg=$("ringBg"),segG=$("segG"),tickG=$("tickG"),
         nL=$("nL"),nR=$("nR"),nLh=$("nLh"),nRh=$("nRh"),
         trailG=$("trailG"),particlesG=$("particles"),ambient=$("ambient"),
         rootStyle=document.documentElement.style;
@@ -292,6 +294,9 @@
     btn.classList.add("on");
     descEl.textContent=t.desc;benefitEl.textContent=t.benefit;doseEl.textContent=t.dose;
     boxG.classList.toggle("hidden",!t.box);
+    segG.classList.toggle("hidden",!!t.box);
+    tickG.classList.toggle("hidden",!!t.box);
+    buildRingMarks();
     orb.classList.toggle("hidden",!t.box);
     orbHalo.classList.toggle("hidden",!t.box);
     trailG.classList.toggle("hidden",!t.box);
@@ -338,6 +343,39 @@
     return{x:Rr-(Rr-L)*p,y:B};
   }
 
+  const NS="http://www.w3.org/2000/svg";
+  function buildRingMarks(){
+    segG.innerHTML="";tickG.innerHTML="";
+    if(tech.box)return;
+    const cyc=cycleLen(),R=122,CIRC=2*Math.PI*R;
+    let acc=0;
+    tech.phases.forEach(ph=>{
+      // faint coloured arc for this phase
+      const frac=ph.t/cyc;
+      const arc=document.createElementNS(NS,"circle");
+      arc.setAttribute("cx",200);arc.setAttribute("cy",200);arc.setAttribute("r",R);
+      arc.setAttribute("fill","none");
+      arc.setAttribute("stroke",hexA(colFor(ph.type),.18));
+      arc.setAttribute("stroke-width","8");
+      arc.setAttribute("stroke-dasharray",`${(frac*CIRC).toFixed(1)} ${CIRC.toFixed(1)}`);
+      arc.setAttribute("stroke-dashoffset",(-acc/cyc*CIRC).toFixed(1));
+      arc.setAttribute("transform","rotate(-90 200 200)");
+      segG.appendChild(arc);
+      // boundary tick at the start of this phase
+      const ang=(-90+360*acc/cyc)*Math.PI/180;
+      const x1=200+Math.cos(ang)*(R-9),y1=200+Math.sin(ang)*(R-9);
+      const x2=200+Math.cos(ang)*(R+9),y2=200+Math.sin(ang)*(R+9);
+      const tick=document.createElementNS(NS,"line");
+      tick.setAttribute("x1",x1.toFixed(1));tick.setAttribute("y1",y1.toFixed(1));
+      tick.setAttribute("x2",x2.toFixed(1));tick.setAttribute("y2",y2.toFixed(1));
+      tick.setAttribute("stroke","rgba(29,58,66,.55)");
+      tick.setAttribute("stroke-width","2.5");
+      tick.setAttribute("stroke-linecap","round");
+      tickG.appendChild(tick);
+      acc+=ph.t;
+    });
+  }
+
   function render(ms){
     const{i,p,rem,cycles}=phaseAt(ms/1000);
     const ph=tech.phases[i];
@@ -349,7 +387,7 @@
     // core + rim + halo breathe together
     center.setAttribute("r",r.toFixed(2));
     centerRim.setAttribute("r",r.toFixed(2));
-    centerRim.setAttribute("stroke",hex);
+    centerRim.setAttribute("stroke",hex);centerRim.style.filter=`drop-shadow(0 0 4px ${hexA(hex,.7)})`;
     halo.setAttribute("r",(r*1.55).toFixed(2));
     halo.setAttribute("fill",hex);
     halo.setAttribute("opacity",(0.10+0.14*(r-R_MIN)/(R_MAX-R_MIN)).toFixed(3));
@@ -426,6 +464,9 @@
   resetB.addEventListener("click",hardReset);
 
   descEl.textContent=tech.desc;benefitEl.textContent=tech.benefit;doseEl.textContent=tech.dose;
+  segG.classList.toggle("hidden",!!tech.box);
+  tickG.classList.toggle("hidden",!!tech.box);
+  buildRingMarks();
   render(0);
 })();
 </script>
