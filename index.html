@@ -171,6 +171,7 @@
   #tool-time .az-gohome { margin-top: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; align-items: center; justify-content: space-between; }
   #tool-time .az-gohome .az-t { font-size: 20px; font-weight: 700; color: #0369a1; }
   #tool-time .az-foot { font-size: 12px; color: #94a3b8; margin-top: 20px; }
+  #breathFrame { border: 0; width: 100%; height: calc(100vh - 130px); min-height: 640px; border-radius: 14px; background: #edf4f4; }
 </style>
 </head>
 <body>
@@ -207,6 +208,10 @@
       <button class="nav-item" data-tool="time">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         Zeit
+      </button>
+      <button class="nav-item" data-tool="breath">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.8 19.6A2 2 0 1 0 14 16H2"/><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/><path d="M9.8 4.4A2 2 0 1 1 11 8H2"/></svg>
+        Atem
       </button>
     </nav>
   </aside>
@@ -367,6 +372,11 @@
         <p class="az-foot">Funktioniert auch über Mitternacht hinaus. Berechnung erfolgt lokal, keine Speicherung.</p>
       </div>
     </section>
+
+    <!-- Atem (Atemtrainer) -->
+    <section class="panel hidden" id="panel-breath">
+      <iframe id="breathFrame" title="Atemtrainer" loading="lazy"></iframe>
+    </section>
   </main>
 </div>
 
@@ -443,6 +453,11 @@ function setTool(tool) {
   document.getElementById("panel-matrix").classList.toggle("hidden", tool !== "matrix");
   document.getElementById("panel-notes").classList.toggle("hidden", tool !== "notes");
   document.getElementById("panel-time").classList.toggle("hidden", tool !== "time");
+  document.getElementById("panel-breath").classList.toggle("hidden", tool !== "breath");
+  if (tool === "breath") {
+    var bf = document.getElementById("breathFrame");
+    if (!bf.getAttribute("src")) bf.setAttribute("src", "atemtrainer.html");
+  }
 }
 document.querySelectorAll(".nav-item").forEach(function (el) {
   el.addEventListener("click", function () { setTool(el.dataset.tool); });
