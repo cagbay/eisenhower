@@ -146,7 +146,9 @@
   .note-title { width: 100%; font-size: 22px; font-weight: 600; border: 0; outline: none; background: transparent; padding: 6px 0; color: var(--ink); }
   .note-title::placeholder { color: var(--faint); }
   .note-body { width: 100%; min-height: 55vh; border: 0; outline: none; background: transparent; resize: vertical; font: inherit; font-size: 15px; line-height: 1.6; color: var(--ink); padding: 6px 0; }
-  .note-body::placeholder { color: var(--faint); }
+  .note-body::placeholder { color: #bfa15a; }
+  .note-title::placeholder { color: #bfa15a; }
+  .note-sheet { background: #fef3c7; border: 1px solid #fde68a; border-radius: 14px; padding: 12px 18px 18px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
 
   /* Arbeitszeitrechner (fest integriert, eigener Namensraum) */
   #tool-time { max-width: 440px; }
@@ -322,8 +324,10 @@
           <span class="editor-status" id="noteStatus">Gespeichert</span>
           <button class="del-note" id="noteDelete">Löschen</button>
         </div>
-        <input class="note-title" id="noteTitle" type="text" placeholder="Titel" />
-        <textarea class="note-body" id="noteBody" placeholder="Notiz …"></textarea>
+        <div class="note-sheet">
+          <input class="note-title" id="noteTitle" type="text" placeholder="Titel" />
+          <textarea class="note-body" id="noteBody" placeholder="Notiz …"></textarea>
+        </div>
       </div>
     </section>
 
