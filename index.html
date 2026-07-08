@@ -143,12 +143,22 @@
   .editor-status { font-size: 12px; color: var(--faint); margin-left: auto; }
   .del-note { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font-size: 13px; color: var(--rose); cursor: pointer; }
   .del-note:hover { background: #fff1f2; }
+  .note-sheet { background: #fef3c7; border: 1px solid #fde68a; border-radius: 14px; padding: 12px 18px 18px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
   .note-title { width: 100%; font-size: 22px; font-weight: 600; border: 0; outline: none; background: transparent; padding: 6px 0; color: var(--ink); }
-  .note-title::placeholder { color: var(--faint); }
+  .note-title::placeholder { color: #bfa15a; }
   .note-body { width: 100%; min-height: 55vh; border: 0; outline: none; background: transparent; resize: vertical; font: inherit; font-size: 15px; line-height: 1.6; color: var(--ink); padding: 6px 0; }
   .note-body::placeholder { color: #bfa15a; }
-  .note-title::placeholder { color: #bfa15a; }
-  .note-sheet { background: #fef3c7; border: 1px solid #fde68a; border-radius: 14px; padding: 12px 18px 18px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+
+  /* Papierkorb */
+  .trashlist { display: flex; flex-direction: column; gap: 6px; }
+  .trashrow { display: flex; align-items: center; gap: 10px; background: #fafafa; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .trashrow .tbody { flex: 1; min-width: 0; }
+  .trashrow .ttitle { display: block; font-size: 14px; color: var(--muted); word-break: break-word; }
+  .trashrow .tmeta { display: block; font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .trestore { flex: 0 0 auto; background: none; border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font-size: 12px; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .trestore:hover { color: var(--ink); background: #fff; }
+  .tdel { flex: 0 0 auto; background: none; border: 0; color: #c4c4c8; cursor: pointer; padding: 2px; }
+  .tdel:hover { color: var(--rose); }
 
   /* Arbeitszeitrechner (fest integriert, eigener Namensraum) */
   #tool-time { max-width: 440px; }
@@ -313,6 +323,20 @@
         </div>
         <input class="search" id="noteSearch" type="text" placeholder="Notizen durchsuchen …" />
         <div class="notes-grid" id="notesGrid"></div>
+
+        <!-- Papierkorb -->
+        <div class="done-card">
+          <div class="done-head" id="trashHead">
+            <div class="left">
+              <span class="chev" id="trashChev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>
+              <h2>Gelöscht</h2>
+              <span class="count" id="trashCount">0</span>
+            </div>
+            <button class="clear" id="emptyTrash" style="display:none">Papierkorb leeren</button>
+          </div>
+          <div id="trashList"></div>
+        </div>
       </div>
 
       <div id="noteEditor" class="hidden">
@@ -450,10 +474,13 @@ var noteStore = { business: [], private: [], school: [] };
 var noteMode = "business";
 var noteQuery = "", noteEditingId = null, noteTouched = false, noteSaveTimer = null;
 var notesHistory = [];
+var trashCollapsed = true;
+try { trashCollapsed = localStorage.getItem("trashCollapsed") !== "0"; } catch (e) {}
 
 var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></svg>';
 var TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>';
 var PLUS  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>';
+var RESTORE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>';
 
 function fmt(ts) {
   if (!ts) return null;
@@ -504,7 +531,7 @@ function undoNotes() {
   noteTouched = false;
   if (noteEditingId) {
     var n = findNote(noteEditingId);
-    if (n) { document.getElementById("noteTitle").value = n.title || ""; document.getElementById("noteBody").value = n.text || ""; }
+    if (n && !n.deleted) { document.getElementById("noteTitle").value = n.title || ""; document.getElementById("noteBody").value = n.text || ""; }
     else { showNotesList(); }
   }
   updateUndoBtnNotes();
@@ -606,7 +633,6 @@ function toggleDone(id) {
 function removeTask(id) { pushHistory(); store[state.mode] = store[state.mode].filter(function (t) { return t.id !== id; }); render(); persist(); }
 function clearDone() { pushHistory(); store[state.mode] = store[state.mode].filter(function (t) { return !t.done; }); render(); persist(); }
 
-// Neu anordnen / verschieben (innerhalb und zwischen Quadranten)
 function reorderTo(id, targetId, before, quad) {
   if (targetId && targetId === id) return;
   var arr = store[state.mode].slice();
@@ -785,9 +811,28 @@ function newNote() {
 function deleteNote() {
   if (!noteEditingId) return;
   pushNotesHistory();
-  noteStore[noteMode] = noteStore[noteMode].filter(function (n) { return n.id !== noteEditingId; });
+  var id = noteEditingId;
+  noteStore[noteMode] = noteStore[noteMode].map(function (n) { return n.id === id ? Object.assign({}, n, { deleted: true, deletedAt: Date.now() }) : n; });
   showNotesList();
   persistNotes();
+}
+function restoreNote(id) {
+  pushNotesHistory();
+  noteStore[noteMode] = noteStore[noteMode].map(function (n) {
+    if (n.id !== id) return n;
+    var c = Object.assign({}, n); delete c.deleted; delete c.deletedAt; c.updatedAt = Date.now(); return c;
+  });
+  persistNotes(); renderNotes();
+}
+function purgeNote(id) {
+  pushNotesHistory();
+  noteStore[noteMode] = noteStore[noteMode].filter(function (n) { return n.id !== id; });
+  persistNotes(); renderNotes();
+}
+function emptyTrash() {
+  pushNotesHistory();
+  noteStore[noteMode] = noteStore[noteMode].filter(function (n) { return !n.deleted; });
+  persistNotes(); renderNotes();
 }
 function onNoteInput() {
   var n = findNote(noteEditingId); if (!n) return;
@@ -805,19 +850,41 @@ function persistNotes() {
 }
 function renderNotes() {
   var q = noteQuery.trim().toLowerCase();
-  var arr = noteStore[noteMode].slice().sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
-  if (q) arr = arr.filter(function (n) { return (n.title || "").toLowerCase().indexOf(q) >= 0 || (n.text || "").toLowerCase().indexOf(q) >= 0; });
+  var all = noteStore[noteMode] || [];
+  var active = all.filter(function (n) { return !n.deleted; }).slice().sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+  if (q) active = active.filter(function (n) { return (n.title || "").toLowerCase().indexOf(q) >= 0 || (n.text || "").toLowerCase().indexOf(q) >= 0; });
   var grid = document.getElementById("notesGrid");
-  if (!arr.length) {
+  if (!active.length) {
     grid.innerHTML = '<p class="note-empty">' + (q ? "Keine Treffer." : "Noch keine Notizen.") + '</p>';
   } else {
-    grid.innerHTML = arr.map(function (n) {
+    grid.innerHTML = active.map(function (n) {
       var title = esc(n.title && n.title.trim() ? n.title : "Ohne Titel");
       var preview = esc((n.text || "").slice(0, 180));
       var d = fmt(n.updatedAt || n.createdAt) || "";
       return '<div class="note-card" data-note="' + n.id + '"><h3>' + title + '</h3><p>' + preview + '</p><div class="date">' + d + '</div></div>';
     }).join("");
   }
+
+  // Papierkorb
+  var trash = all.filter(function (n) { return n.deleted; }).slice().sort(function (a, b) { return (b.deletedAt || 0) - (a.deletedAt || 0); });
+  document.getElementById("trashCount").textContent = trash.length;
+  document.getElementById("emptyTrash").style.display = trash.length ? "" : "none";
+  var tl = document.getElementById("trashList");
+  if (!trash.length) { tl.className = ""; tl.innerHTML = '<div class="empty">Papierkorb ist leer.</div>'; }
+  else {
+    tl.className = "trashlist";
+    tl.innerHTML = trash.map(function (n) {
+      var title = esc(n.title && n.title.trim() ? n.title : "Ohne Titel");
+      return '<div class="trashrow"><div class="tbody"><span class="ttitle">' + title + '</span>' +
+        (fmt(n.deletedAt) ? '<span class="tmeta">Gelöscht ' + fmt(n.deletedAt) + '</span>' : '') + '</div>' +
+        '<button class="trestore" data-restore="' + n.id + '" title="Wiederherstellen">' + RESTORE + ' Wiederherstellen</button>' +
+        '<button class="tdel" data-purge="' + n.id + '" title="Endgültig löschen">' + TRASH + '</button></div>';
+    }).join("");
+  }
+  document.getElementById("trashChev").classList.toggle("collapsed", trashCollapsed);
+  document.getElementById("trashHead").classList.toggle("collapsed", trashCollapsed);
+  if (trashCollapsed) tl.classList.add("hidden");
+
   updateUndoBtnNotes();
 }
 function setNoteMode(m) {
@@ -844,7 +911,7 @@ document.getElementById("notesGrid").addEventListener("click", function (e) {
   if (card) openNote(card.dataset.note);
 });
 
-/* ---- Erledigt zuklappen ---- */
+/* ---- Zuklappen: Erledigt & Papierkorb ---- */
 document.getElementById("doneHead").addEventListener("click", function (e) {
   if (e.target.closest("#clearDone")) return;
   doneCollapsed = !doneCollapsed;
@@ -852,12 +919,21 @@ document.getElementById("doneHead").addEventListener("click", function (e) {
   render();
 });
 document.getElementById("clearDone").addEventListener("click", clearDone);
+document.getElementById("trashHead").addEventListener("click", function (e) {
+  if (e.target.closest("#emptyTrash")) return;
+  trashCollapsed = !trashCollapsed;
+  try { localStorage.setItem("trashCollapsed", trashCollapsed ? "1" : "0"); } catch (err) {}
+  renderNotes();
+});
+document.getElementById("emptyTrash").addEventListener("click", emptyTrash);
 
 /* ---- globale Klick-/Tastatur-Events ---- */
 document.addEventListener("click", function (e) {
-  var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode],[data-notemode]") : null;
+  var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode],[data-notemode],[data-restore],[data-purge]") : null;
   if (!btn) return;
-  if (btn.dataset.act === "toggle") toggleDone(btn.dataset.id);
+  if (btn.dataset.restore) restoreNote(btn.dataset.restore);
+  else if (btn.dataset.purge) purgeNote(btn.dataset.purge);
+  else if (btn.dataset.act === "toggle") toggleDone(btn.dataset.id);
   else if (btn.dataset.act === "edit") startEdit(btn.dataset.id);
   else if (btn.dataset.act === "del") removeTask(btn.dataset.id);
   else if (btn.dataset.addbtn) {
