@@ -104,8 +104,8 @@
   .text.done:hover { background: transparent; }
   .edit { width: 100%; font: inherit; font-size: 14px; line-height: 1.35; border: 1px solid #a1a1aa; border-radius: 6px; padding: 3px 6px; outline: none; background: #fff; color: var(--ink); }
   .stamp { display: block; font-size: 12px; color: var(--faint); margin-top: 2px; }
-  .meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--faint); margin-top: 2px; }
-  .meta .mdot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
+  .meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .meta .mdot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; margin-right: 3px; }
   .del { flex: 0 0 auto; margin-top: 2px; background: none; border: 0; color: #d4d4d8; cursor: pointer; padding: 2px; opacity: 0; transition: opacity .12s, color .12s; }
   .task:hover .del, .donerow:hover .del { opacity: 1; }
   .del:hover { color: var(--rose); }
@@ -116,9 +116,12 @@
   .add button { flex: 0 0 auto; background: #f4f4f5; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; color: #3f3f46; cursor: pointer; display: flex; }
   .add button:hover { background: #e4e4e7; }
   .done-card { margin-top: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
-  .done-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .done-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; cursor: pointer; user-select: none; }
+  .done-head.collapsed { margin-bottom: 0; }
   .done-head .left { display: flex; align-items: center; gap: 8px; color: #52525b; }
   .done-head h2 { font-size: 15px; font-weight: 600; margin: 0; }
+  .chev { display: inline-flex; color: var(--faint); transition: transform .15s ease; }
+  .chev.collapsed { transform: rotate(-90deg); }
   .clear { background: none; border: 0; font-size: 12px; color: var(--faint); cursor: pointer; }
   .clear:hover { color: var(--rose); }
   .donerow { display: flex; align-items: flex-start; gap: 10px; background: #fafafa; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
@@ -235,7 +238,7 @@
       <div class="phead">
         <div>
           <h1 class="title">Eisenhower-Matrix</h1>
-          <p class="sub">Klick auf einen Text zum Bearbeiten, per Drag &amp; Drop verschieben. <span class="sync" id="syncState">Synchronisiert</span></p>
+          <p class="sub">Ziehen zum Anordnen und Verschieben, Klick auf den Text zum Bearbeiten. <span class="sync" id="syncState">Synchronisiert</span></p>
         </div>
         <div class="controls">
           <button class="undo" id="undoBtnMatrix" disabled title="Letzte Änderung rückgängig machen">
@@ -260,8 +263,9 @@
       </div>
       <div class="grid" id="grid"></div>
       <div class="done-card">
-        <div class="done-head">
+        <div class="done-head" id="doneHead">
           <div class="left">
+            <span class="chev" id="doneChev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
             <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
             <h2>Erledigt</h2>
             <span class="count" id="doneCount">0</span>
@@ -435,6 +439,8 @@ var store = { business: [], private: [], school: [] };
 var state = { mode: "business" };
 var docRef = null, unsub = null, dragId = null, editingId = null;
 var history = [];
+var doneCollapsed = false;
+try { doneCollapsed = localStorage.getItem("doneCollapsed") === "1"; } catch (e) {}
 
 var noteStore = { business: [], private: [], school: [] };
 var noteMode = "business";
@@ -465,14 +471,8 @@ function setTool(tool) {
   document.getElementById("panel-time").classList.toggle("hidden", tool !== "time");
   document.getElementById("panel-breath").classList.toggle("hidden", tool !== "breath");
   document.getElementById("panel-game").classList.toggle("hidden", tool !== "game");
-  if (tool === "breath") {
-    var bf = document.getElementById("breathFrame");
-    if (!bf.getAttribute("src")) bf.setAttribute("src", "atemtrainer.html");
-  }
-  if (tool === "game") {
-    var gf = document.getElementById("gameFrame");
-    if (!gf.getAttribute("src")) gf.setAttribute("src", "flappy-bird.html");
-  }
+  if (tool === "breath") { var bf = document.getElementById("breathFrame"); if (!bf.getAttribute("src")) bf.setAttribute("src", "atemtrainer.html"); }
+  if (tool === "game") { var gf = document.getElementById("gameFrame"); if (!gf.getAttribute("src")) gf.setAttribute("src", "flappy-bird.html"); }
 }
 document.querySelectorAll(".nav-item").forEach(function (el) {
   el.addEventListener("click", function () { setTool(el.dataset.tool); });
@@ -548,7 +548,6 @@ onAuthStateChanged(auth, function (user) {
       }
       store.business = inc.business; store.private = inc.private; store.school = inc.school;
 
-      // Beim Bearbeiten die offene Notiz lokal behalten
       if (noteEditingId) {
         var local = findNote(noteEditingId);
         var arr = ns[noteMode];
@@ -589,10 +588,41 @@ function addTask(q, text) {
   store[state.mode] = store[state.mode].concat([{ id: uid(), text: text, quadrant: q, done: false, createdAt: Date.now() }]);
   render(); persist();
 }
-function toggleDone(id) { pushHistory(); store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { done: !t.done }) : t; }); render(); persist(); }
+function toggleDone(id) {
+  pushHistory();
+  store[state.mode] = store[state.mode].map(function (t) {
+    if (t.id !== id) return t;
+    var nd = !t.done;
+    var nt = Object.assign({}, t, { done: nd });
+    if (nd) nt.completedAt = Date.now(); else delete nt.completedAt;
+    return nt;
+  });
+  render(); persist();
+}
 function removeTask(id) { pushHistory(); store[state.mode] = store[state.mode].filter(function (t) { return t.id !== id; }); render(); persist(); }
-function moveTask(id, q) { pushHistory(); store[state.mode] = store[state.mode].map(function (t) { return t.id === id ? Object.assign({}, t, { quadrant: q }) : t; }); render(); persist(); }
 function clearDone() { pushHistory(); store[state.mode] = store[state.mode].filter(function (t) { return !t.done; }); render(); persist(); }
+
+// Neu anordnen / verschieben (innerhalb und zwischen Quadranten)
+function reorderTo(id, targetId, before, quad) {
+  if (targetId && targetId === id) return;
+  var arr = store[state.mode].slice();
+  var di = -1; for (var i = 0; i < arr.length; i++) if (arr[i].id === id) { di = i; break; }
+  if (di < 0) return;
+  var dragged = Object.assign({}, arr[di], { quadrant: quad });
+  arr.splice(di, 1);
+  if (targetId) {
+    var ti = -1; for (var j = 0; j < arr.length; j++) if (arr[j].id === targetId) { ti = j; break; }
+    if (ti < 0) arr.push(dragged); else arr.splice(before ? ti : ti + 1, 0, dragged);
+  } else {
+    var lastIdx = -1; for (var k = 0; k < arr.length; k++) if (arr[k].quadrant === quad) lastIdx = k;
+    if (lastIdx < 0) arr.push(dragged); else arr.splice(lastIdx + 1, 0, dragged);
+  }
+  if (JSON.stringify(arr) === JSON.stringify(store[state.mode])) return;
+  pushHistory();
+  store[state.mode] = arr;
+  render(); persist();
+}
+
 function startEdit(id) { editingId = id; render(); }
 function cancelEdit() { editingId = null; render(); }
 function commitEdit(id, text) {
@@ -651,7 +681,8 @@ function render() {
     grid.appendChild(card);
   });
 
-  var done = tasks.filter(function (t) { return t.done; });
+  var done = tasks.filter(function (t) { return t.done; })
+    .sort(function (a, b) { return (b.completedAt || b.createdAt || 0) - (a.completedAt || a.createdAt || 0); });
   document.getElementById("doneCount").textContent = done.length;
   document.getElementById("clearDone").style.display = done.length ? "" : "none";
   var dl = document.getElementById("doneList");
@@ -659,29 +690,62 @@ function render() {
   else {
     dl.className = "donelist";
     dl.innerHTML = done.map(function (t) {
-      var q = QMAP[t.quadrant]; var stamp = fmt(t.createdAt);
+      var q = QMAP[t.quadrant];
       return '<div class="donerow">' +
         '<button class="box checked" data-act="toggle" data-id="' + t.id + '" title="Wieder als offen markieren">' + CHECK + '</button>' +
         '<div class="body"><span class="text done">' + esc(t.text) + '</span>' +
-        '<span class="meta"><span><span class="mdot" style="background:' + (q ? q.dot : "#a1a1aa") + '"></span> ' + (q ? q.title : "—") + '</span>' +
-        (stamp ? ' · ' + stamp : '') + '</span></div>' +
+        '<span class="meta">' +
+          '<span><span class="mdot" style="background:' + (q ? q.dot : "#a1a1aa") + '"></span>' + (q ? q.title : "—") + '</span>' +
+          (fmt(t.createdAt) ? '<span>Erstellt ' + fmt(t.createdAt) + '</span>' : '') +
+          (fmt(t.completedAt) ? '<span>Erledigt ' + fmt(t.completedAt) + '</span>' : '') +
+        '</span></div>' +
         '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button></div>';
     }).join("");
   }
+  document.getElementById("doneChev").classList.toggle("collapsed", doneCollapsed);
+  document.getElementById("doneHead").classList.toggle("collapsed", doneCollapsed);
+  if (doneCollapsed) dl.classList.add("hidden");
 
   wireDnD();
   if (editingId) { var ie = document.querySelector('input[data-edit-id="' + editingId + '"]'); if (ie) { ie.focus(); ie.select(); } }
 }
 
+function clearInsert() { document.querySelectorAll("#grid .task").forEach(function (t) { t.style.boxShadow = ""; }); }
+
 function wireDnD() {
-  document.querySelectorAll('.task[draggable="true"]').forEach(function (el) {
-    el.addEventListener("dragstart", function () { dragId = el.dataset.id; });
-    el.addEventListener("dragend", function () { dragId = null; clearOver(); });
+  document.querySelectorAll('#grid .task[draggable="true"]').forEach(function (el) {
+    el.addEventListener("dragstart", function (e) {
+      dragId = el.dataset.id;
+      if (e.dataTransfer) { e.dataTransfer.effectAllowed = "move"; try { e.dataTransfer.setData("text/plain", dragId); } catch (x) {} }
+    });
+    el.addEventListener("dragend", function () { dragId = null; clearOver(); clearInsert(); });
+    el.addEventListener("dragover", function (e) {
+      if (!dragId || dragId === el.dataset.id) return;
+      e.preventDefault(); e.stopPropagation();
+      var r = el.getBoundingClientRect();
+      var before = e.clientY < r.top + r.height / 2;
+      clearInsert();
+      el.style.boxShadow = before ? "inset 0 3px 0 -1px #059669" : "inset 0 -3px 0 -1px #059669";
+    });
+    el.addEventListener("dragleave", function () { el.style.boxShadow = ""; });
+    el.addEventListener("drop", function (e) {
+      if (!dragId) return;
+      e.preventDefault(); e.stopPropagation();
+      var r = el.getBoundingClientRect();
+      var before = e.clientY < r.top + r.height / 2;
+      var quadEl = el.closest(".quad");
+      reorderTo(dragId, el.dataset.id, before, quadEl.dataset.q);
+      dragId = null; clearOver(); clearInsert();
+    });
   });
   document.querySelectorAll("#grid .quad").forEach(function (el) {
     el.addEventListener("dragover", function (e) { e.preventDefault(); var q = QMAP[el.dataset.q]; el.style.background = q.over; el.style.borderColor = q.overBorder; });
-    el.addEventListener("dragleave", function () { resetQuad(el); });
-    el.addEventListener("drop", function (e) { e.preventDefault(); if (dragId) moveTask(dragId, el.dataset.q); dragId = null; });
+    el.addEventListener("dragleave", function (ev) { if (ev.target === el) resetQuad(el); });
+    el.addEventListener("drop", function (e) {
+      e.preventDefault();
+      if (dragId) reorderTo(dragId, null, false, el.dataset.q);
+      dragId = null; clearOver(); clearInsert();
+    });
   });
 }
 function resetQuad(el) { var q = QMAP[el.dataset.q]; el.style.background = q.glow; el.style.borderColor = q.border; }
@@ -776,6 +840,15 @@ document.getElementById("notesGrid").addEventListener("click", function (e) {
   if (card) openNote(card.dataset.note);
 });
 
+/* ---- Erledigt zuklappen ---- */
+document.getElementById("doneHead").addEventListener("click", function (e) {
+  if (e.target.closest("#clearDone")) return;
+  doneCollapsed = !doneCollapsed;
+  try { localStorage.setItem("doneCollapsed", doneCollapsed ? "1" : "0"); } catch (err) {}
+  render();
+});
+document.getElementById("clearDone").addEventListener("click", clearDone);
+
 /* ---- globale Klick-/Tastatur-Events ---- */
 document.addEventListener("click", function (e) {
   var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode],[data-notemode]") : null;
@@ -789,7 +862,6 @@ document.addEventListener("click", function (e) {
   } else if (btn.dataset.mode) setMode(btn.dataset.mode);
   else if (btn.dataset.notemode) setNoteMode(btn.dataset.notemode);
 });
-document.getElementById("clearDone").addEventListener("click", clearDone);
 document.addEventListener("keydown", function (e) {
   var t = e.target;
   if (!t || !t.dataset) return;
