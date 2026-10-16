@@ -188,6 +188,13 @@
   #tool-time .az-foot { font-size: 12px; color: #94a3b8; margin-top: 20px; }
   #breathFrame { border: 0; width: 100%; height: calc(100vh - 130px); min-height: 640px; border-radius: 14px; background: #edf4f4; }
   #gameFrame { border: 0; width: 100%; height: calc(100vh - 130px); min-height: 560px; border-radius: 14px; background: #000; }
+  #ifcFrame { display: block; border: 0; width: 100%; height: calc(100vh - 130px); height: calc(100dvh - 130px); min-height: 520px; border-radius: 14px; background: #e6eaee; }
+  @media (max-width: 720px) {
+    .side-nav { overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+    .side-nav::-webkit-scrollbar { display: none; }
+    .nav-item { flex: 0 0 auto; padding: 8px 10px; }
+    #ifcFrame { height: calc(100dvh - 150px); min-height: 440px; }
+  }
 </style>
 </head>
 <body>
@@ -220,6 +227,10 @@
       <button class="nav-item" data-tool="notes">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
         Notizen
+      </button>
+      <button class="nav-item" data-tool="ifc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 3.5 7v10L12 21.5 20.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7"/><path d="M12 11.5v10"/></svg>
+        IFC
       </button>
       <button class="nav-item" data-tool="time">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
@@ -353,6 +364,11 @@
           <textarea class="note-body" id="noteBody" placeholder="Notiz …"></textarea>
         </div>
       </div>
+    </section>
+
+    <!-- IFC (IFC Viewer, eigener Ordner ifc/) -->
+    <section class="panel hidden" id="panel-ifc">
+      <iframe id="ifcFrame" title="IFC Viewer" allow="fullscreen; clipboard-write"></iframe>
     </section>
 
     <!-- Zeit (Arbeitszeitrechner) -->
@@ -499,9 +515,11 @@ function setTool(tool) {
   document.querySelectorAll(".nav-item").forEach(function (el) { el.classList.toggle("active", el.dataset.tool === tool); });
   document.getElementById("panel-matrix").classList.toggle("hidden", tool !== "matrix");
   document.getElementById("panel-notes").classList.toggle("hidden", tool !== "notes");
+  document.getElementById("panel-ifc").classList.toggle("hidden", tool !== "ifc");
   document.getElementById("panel-time").classList.toggle("hidden", tool !== "time");
   document.getElementById("panel-breath").classList.toggle("hidden", tool !== "breath");
   document.getElementById("panel-game").classList.toggle("hidden", tool !== "game");
+  if (tool === "ifc") { var xf = document.getElementById("ifcFrame"); if (!xf.getAttribute("src")) xf.setAttribute("src", "ifc/"); }
   if (tool === "breath") { var bf = document.getElementById("breathFrame"); if (!bf.getAttribute("src")) bf.setAttribute("src", "atemtrainer.html"); }
   if (tool === "game") { var gf = document.getElementById("gameFrame"); if (!gf.getAttribute("src")) gf.setAttribute("src", "flappy-bird.html"); }
 }
