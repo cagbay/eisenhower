@@ -1,4 +1,4 @@
-const CACHE = "eisenhower-v18";
+const CACHE = "eisenhower-v19";
 const ASSETS = ["./", "./index.html", "./manifest.json"];
 
 self.addEventListener("install", (e) => {
@@ -6,8 +6,9 @@ self.addEventListener("install", (e) => {
   self.skipWaiting();
 });
 self.addEventListener("activate", (e) => {
+  // nur eigene alte Caches loeschen, den Cache des IFC Viewers (ifc-viewer-...) stehen lassen
   e.waitUntil(caches.keys().then((keys) =>
-    Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+    Promise.all(keys.filter((k) => k.indexOf("eisenhower-") === 0 && k !== CACHE).map((k) => caches.delete(k)))
   ));
   self.clients.claim();
 });
