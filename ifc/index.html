@@ -74,6 +74,7 @@ button { cursor: pointer; }
 .top { display: flex; align-items: center; gap: 14px; padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--panel); border-bottom: 1px solid var(--line); min-width: 0; }
 .brand { display: flex; align-items: center; gap: 9px; flex: none; }
 .brand svg { width: 26px; height: 26px; color: var(--accent); }
+.ver { font-family: var(--f-mono); font-size: 11px; font-weight: 500; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; margin-left: -2px; align-self: center; }
 .brand-name { font-family: var(--f-display); font-weight: 700; font-size: 18px; letter-spacing: 0.01em; }
 .file { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
 .file #fileName { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -299,7 +300,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 @media (max-width: 860px) {
   #app { grid-template-rows: auto 1fr auto; }
   .top { gap: 10px; padding-block: 6px; }
-  .brand-name { display: none; }
+  .brand-name, .ver { display: none; }
   #schemaChip { display: none; }
   .file #fileName { font-size: 13px; }
   .actions .btn span.long { display: none; }
@@ -336,7 +337,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   <header class="top">
     <div class="brand">
       <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M16 3 28 9.5v13L16 29 4 22.5v-13z"/><path d="M4 9.5 16 16l12-6.5M16 16v13"/></svg>
-      <span class="brand-name">IFC Viewer</span>
+      <span class="brand-name">IFC Viewer</span><span class="ver" id="appVersion" title="Version">v2.1</span>
     </div>
     <div class="file"><span id="fileName">Beispiel_Seefeldquai.ifc</span><div class="mtabs" id="modelTabs" role="tablist" aria-label="Offene Modelle" hidden></div><span class="chip" id="schemaChip">IFC4</span><span class="chip sample" id="sampleChip">Beispiel</span></div>
     <div class="actions">
