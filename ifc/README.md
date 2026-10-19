@@ -10,7 +10,7 @@ Web App zum Ansehen von IFC Modellen im Browser und auf dem iPad. Die IFC Dateie
 - Modellfarben pro Datei, Nordpfeil, Koordinaten in LV95 und WGS84
 - Luftbild, Landeskarte und Amtliche Vermessung von swisstopo als Gelände im 3D
 - Pläne als PDF unter dem Modell: GeoPDF in LV95 werden automatisch platziert, andere Pläne mit zwei Passpunkten eingepasst
-- WMS Dienste in LV95 (zum Beispiel Amtliche Vermessung Kanton und Stadt Zürich) als Bild unter dem Modell, das der Ansicht folgt
+- Amtliche Vermessung als WMS von geodienste.ch unter dem Modell, im Bereich Karte, das Bild folgt der Ansicht
 
 ## Auf GitHub Pages veröffentlichen
 
