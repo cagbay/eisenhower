@@ -9,6 +9,7 @@ Web App zum Ansehen von IFC Modellen im Browser und auf dem iPad. Die IFC Dateie
 - Messen mit Höhendifferenz und Gefälle, Schnitt, Zoomfenster, Röntgen, Kanten
 - Modellfarben pro Datei, Nordpfeil, Koordinaten in LV95 und WGS84
 - Luftbild, Landeskarte und Amtliche Vermessung von swisstopo als Gelände im 3D
+- Pläne als PDF unter dem Modell: GeoPDF in LV95 werden automatisch platziert, andere Pläne mit zwei Passpunkten eingepasst
 
 ## Auf GitHub Pages veröffentlichen
 
@@ -33,4 +34,4 @@ Neue `index.html` und `sw.js` im Repository hochladen und dabei die alten ersetz
 
 Ein öffentliches Repository zeigt nur den Programmcode der App. Modelle und Daten, die du in der App öffnest, verlassen das Gerät nicht.
 
-Kartendaten: © swisstopo. Geometrie: web-ifc (That Open Company, MPL 2.0), 3D: three.js (MIT).
+Kartendaten: © swisstopo. Geometrie: web-ifc (That Open Company, MPL 2.0), 3D: three.js (MIT), PDF: pdf.js (Mozilla, Apache 2.0).
