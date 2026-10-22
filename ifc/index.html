@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- IFC Viewer v4.0. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Nutzung, Weitergabe und Veraenderung nur mit Erlaubnis. Freie Bausteine und ihre Lizenzen: siehe LICENSE.md -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -78,6 +79,7 @@ button { cursor: pointer; }
 .verwrap { position: relative; display: inline-flex; align-self: center; margin-left: -2px; outline: none; }
 .verwrap .ver { margin-left: 0; cursor: default; }
 .vertip { position: absolute; left: 0; top: calc(100% + 8px); z-index: 30; display: flex; flex-direction: column; gap: 3px; min-width: 210px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); font-size: 12.5px; white-space: nowrap; opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .12s, transform .12s, visibility 0s .12s; }
+.vertip .vercopy { margin-top: 5px; padding-top: 6px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; line-height: 1.45; white-space: normal; }
 .vertip b { font-family: var(--f-display); font-size: 13px; }
 .vertip a { color: var(--accent); text-decoration: none; }
 .vertip a:hover { text-decoration: underline; }
@@ -425,7 +427,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   <header class="top">
     <div class="brand">
       <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M16 3 28 9.5v13L16 29 4 22.5v-13z"/><path d="M4 9.5 16 16l12-6.5M16 16v13"/></svg>
-      <span class="brand-name">IFC Viewer</span><span class="verwrap" id="verWrap" tabindex="0" aria-describedby="verTip"><span class="ver" id="appVersion">v3.9</span><span class="vertip" id="verTip" role="tooltip"><b>IFC Viewer v3.9</b><span>Entwickelt von Caglar Baysal</span><a href="mailto:cagbay@gmail.com">cagbay@gmail.com</a></span></span>
+      <span class="brand-name">IFC Viewer</span><span class="verwrap" id="verWrap" tabindex="0" aria-describedby="verTip"><span class="ver" id="appVersion">v4.0</span><span class="vertip" id="verTip" role="tooltip"><b>IFC Viewer v4.0</b><span>Entwickelt von Caglar Baysal</span><a href="mailto:cagbay@gmail.com">cagbay@gmail.com</a><small class="vercopy">© 2026 Caglar Baysal. Alle Rechte vorbehalten.<br>Verwendete freie Bausteine: three.js, web-ifc, pdf.js, laz-perf, fflate.</small></span></span>
     </div>
     <div class="file"><span id="fileName">Beispiel_Seefeldquai.ifc</span><div class="mtabs" id="modelTabs" role="tablist" aria-label="Offene Modelle" hidden></div><span class="chip" id="schemaChip">IFC4</span><span class="chip sample" id="sampleChip">Beispiel</span></div>
     <div class="actions">
