@@ -6,7 +6,7 @@ Web App zum Ansehen von IFC Modellen im Browser und auf dem iPad. Die IFC Dateie
 
 - IFC2x3, IFC4 und IFC4x3 als .ifc oder .ifczip, mehrere Modelle gleichzeitig
 - Struktur, Klassen, Suche und Eigenschaften (Psets, Mengen, Material)
-- Messen mit Höhendifferenz und Gefälle, Schnitt, Zoomfenster, Röntgen, Kanten
+- Messen mit Höhendifferenz und Gefälle, Schnitt mit Feinregler, Zoomfenster, Hand zum Verschieben, Röntgen, Kanten
 - Modellfarben pro Datei, Nordpfeil, Koordinaten in LV95 und WGS84
 - Luftbild, Landeskarte und Amtliche Vermessung von swisstopo als Gelände im 3D
 - Pläne als PDF unter dem Modell: GeoPDF in LV95 werden automatisch platziert, andere Pläne automatisch über die Parzellen-, Gebäude- und Hausnummern auf dem Plan (Suchdienste von geo.admin.ch) oder mit zwei Passpunkten eingepasst; danach Feinabgleich an den Gebäuden der Amtlichen Vermessung, Verschieben mit einem Punkt und Zurück
