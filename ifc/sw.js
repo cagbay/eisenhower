@@ -1,5 +1,5 @@
 // Offline cache for the IFC Viewer web app. Version changes with every build.
-const CACHE = 'ifc-viewer-v6.4-261026-2010';
+const CACHE = 'ifc-viewer-v6.5-261026-2018';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192-v2.png', './icons/icon-512-v2.png', './icons/apple-touch-icon-v2.png', './icons/favicon-32-v2.png'];
 
 self.addEventListener('install', (e) => {
