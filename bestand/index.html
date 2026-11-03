@@ -110,11 +110,11 @@ footer a { color: inherit; }
   </section>
 
   <section class="karte" id="k-bib">
-    <h2><span class="nr">2</span> WVZ Bauteilbibliothek <span class="leise">für die Formstücke, einmal pro Gerät</span></h2>
-    <div id="bib-status" class="leise">Noch keine Bibliothek auf diesem Gerät.</div>
+    <h2><span class="nr">2</span> WVZ Bauteilbibliothek <span class="leise">für die Formstücke</span></h2>
+    <div id="bib-status" class="leise">Wird nach dem Entsperren geladen.</div>
     <div class="aktionen">
-      <button class="leicht" id="bib-knopf" type="button">Bibliothek ZIP wählen</button>
-      <span class="leise">WVZ_Bauteile_IFC43_v2_ohne_Logo_JJMMTT.zip</span>
+      <button class="leicht" id="bib-knopf" type="button">Andere Bibliothek ZIP wählen</button>
+      <button class="leicht versteckt" id="bib-zurueck" type="button">Hinterlegte verwenden</button>
       <input type="file" id="bib-datei" accept=".zip" class="versteckt">
     </div>
   </section>
@@ -142,6 +142,11 @@ footer a { color: inherit; }
       <span>Messpunkte ins IFC<small>Rote Kugeln mit Kote, zur Kontrolle. Für die Abgabe meist aus.</small></span></label>
     <label class="schalter"><input type="checkbox" id="formstuecke" checked>
       <span>Formstücke aus der WVZ Bauteilbibliothek<small>T Stücke, Bögen, Reduktionen, Kupplungen. Braucht Bibliothek und Werkleitungs DXF.</small></span></label>
+    <details id="erweitert" style="margin-top:6px"><summary class="leise" style="cursor:pointer">Projekteinstellungen <span id="vorlage-hinweis"></span></summary>
+      <label class="feld" style="margin-top:8px">Weitere Optionen für shp2ifc
+        <input id="weitere" placeholder="z.B. --koten-verwerfen 2820,1656600 --kreuzung-unter 65812,65813" spellcheck="false" autocomplete="off" style="font-family:var(--mono);font-size:13px"></label>
+      <div class="leise" style="margin-top:6px">Gleich wie «--weitere» bei bestand_lauf.py: --koten-verwerfen, --kreuzung-unter, --kulisse-stollen, --cover, --transport-dn usw. Für bekannte Projekte wird die Vorlage automatisch eingesetzt.</div>
+    </details>
     <div class="aktionen">
       <button class="haupt" id="start" disabled type="button">PL-Bestandsmodell erzeugen</button>
       <span class="leise" id="start-hinweis">Rechenkern lädt noch</span>
@@ -240,18 +245,23 @@ worker.onmessage = async (ev) => {
   }
   else if (m.typ === "entsperrt") {
     entsperrt = true; $("login").classList.add("versteckt");
+    projekte = m.projekte || {};
     if (!gemerkt && $("merken").checked) lsSchreiben("plbg-key", { salt: info.salt, key: versuchterSchluessel });
-    $("motor-text").innerHTML = `<span style="color:var(--gut)">Bereit</span> <span class="leise">(${motorZeit} s, beim nächsten Mal schneller)</span>`;
+    $("motor-text").innerHTML = `<span style="color:var(--gut)">Bereit</span> <span class="leise">(${motorZeit} s, beim nächsten Mal schneller. Skripte ${esc(m.stand || "")})</span>`;
     const g = await dbLesen("bibliothek");
-    if (g) { bibName = g.name; $("bib-status").textContent = "Bibliothek wird geladen"; worker.postMessage({ typ: "bibliothek", daten: g.daten }); }
+    if (g) { bibName = g.name; $("bib-status").textContent = "Eigene Bibliothek wird geladen"; worker.postMessage({ typ: "bibliothek", daten: g.daten }); }
+    else worker.postMessage({ typ: "bibliothek_hinterlegt" });
+    vorlage();
     if (dateien.length) pruefen();
     zustand();
   }
+  else if (m.typ === "bibliothek_lade") $("bib-status").textContent = "Hinterlegte WVZ Bibliothek wird geladen";
   else if (m.typ === "bibliothek") {
     bibliothek = m.anzahl;
-    $("bib-status").innerHTML = m.anzahl
-      ? `<span style="color:var(--gut)">${m.anzahl} Bauteile bereit</span> <span class="leise">${bibName}, auf diesem Gerät gespeichert</span>`
-      : `<span style="color:var(--fehler)">Im ZIP wurden keine IFC Bauteile gefunden.</span>`;
+    $("bib-status").innerHTML = !m.anzahl ? `<span style="color:var(--fehler)">Keine IFC Bauteile gefunden.</span>`
+      : m.hinterlegt ? `<span style="color:var(--gut)">${m.anzahl} Bauteile bereit</span> <span class="leise">WVZ Bibliothek v2 ohne Logo, Stand ${esc(info.bibliothek || "")}, hinterlegt</span>`
+      : `<span style="color:var(--gut)">${m.anzahl} Bauteile bereit</span> <span class="leise">eigene Bibliothek ${esc(bibName)}, auf diesem Gerät gespeichert</span>`;
+    $("bib-zurueck").classList.toggle("versteckt", !!m.hinterlegt);
     zustand();
   }
   else if (m.typ === "geprueft") { pruefung = m.ergebnis; zeigePruefung(); zustand(); }
@@ -278,6 +288,25 @@ async function bibliothekNehmen(f) {
   if (entsperrt) worker.postMessage({ typ: "bibliothek", daten }, [daten]);
 }
 $("bib-knopf").onclick = () => $("bib-datei").click();
+$("bib-zurueck").onclick = async () => {
+  try { const db = await dbOeffnen(); db.transaction(DB.store, "readwrite").objectStore(DB.store).delete("bibliothek"); } catch {}
+  worker.postMessage({ typ: "bibliothek_hinterlegt" });
+};
+
+// ---------- Projektvorlagen (aus dem verschlüsselten Skriptpaket, projekte.json)
+let projekte = {}, vorlageGesetzt = "";
+function vorlage() {
+  const nr = ($("projekt").value.match(/\d{5}/) || [""])[0];
+  const v = projekte[nr];
+  if (v && (!$("weitere").value || $("weitere").value === vorlageGesetzt)) {
+    $("weitere").value = v.weitere || ""; vorlageGesetzt = $("weitere").value;
+    if (!$("ort").value && v.ort) $("ort").value = v.ort;
+    $("vorlage-hinweis").textContent = `· Vorlage ${nr} eingesetzt`;
+  } else if (!v && $("weitere").value === vorlageGesetzt) {
+    $("weitere").value = ""; vorlageGesetzt = ""; $("vorlage-hinweis").textContent = "";
+  }
+}
+$("projekt").addEventListener("input", vorlage);
 $("bib-datei").onchange = (e) => { if (e.target.files[0]) bibliothekNehmen(e.target.files[0]); };
 
 // ---------- Projektdateien: Ziehen, auch ganze Ordner
@@ -316,7 +345,7 @@ async function aufnehmen(liste) {
   if (!$("projekt").value) {
     const shp = dateien.find((d) => /\.zip$/i.test(d.name));
     const m = shp && shp.name.match(/(?:^|_)(\d{5})(?:_|\b)/);
-    if (m) $("projekt").value = m[1];
+    if (m) { $("projekt").value = m[1]; vorlage(); }
   }
   zeigeListe(); if (entsperrt) pruefen(); zustand();
 }
@@ -356,7 +385,6 @@ function zeigePruefung() {
   if (!p.shp) h += `<div class="meldung fehler">Kein brauchbarer Shapefile Export gefunden (ZIP mit Leitung.shp). Ein ZIP mit weiteren ZIPs darin bitte zuerst entpacken.</div>`;
   for (const w of p.warnungen) h += `<div class="meldung warn">${esc(w)}</div>`;
   if (p.shp && !p.dxf.length) h += `<div class="meldung warn">Ohne Werkleitungs DXF fehlen Getriebeseite der Klappen, Koten nur im DXF, vertikale Bögen und die Formstücke.</div>`;
-  if (p.dtm && /\.ifc$/i.test(p.dtm)) h += `<div class="meldung warn">Geländemodell als IFC (${esc(p.dtm)}) geht im Browser noch nicht. Datei entfernen und swissALTI3D automatisch holen lassen.</div>`;
   if (p.shp && !p.warnungen.length && p.dxf.length) h += `<div class="meldung gut">Eingang in Ordnung.</div>`;
   h += `<details style="margin-top:8px"><summary class="leise" style="cursor:pointer">Details der Eingangsprüfung</summary><pre class="log">${esc(p.zeilen.join("\n"))}</pre></details>`;
   $("pruefung").innerHTML = h;
@@ -386,7 +414,8 @@ $("start").onclick = () => {
   const projekt = $("projekt").value.trim() || "Projekt";
   worker.postMessage({ typ: "rechnen", dateien: dateien.map((d) => ({ name: d.name, daten: d.daten.slice(0) })),
     optionen: { projekt, ort: $("ort").value.trim() || projekt, messpunkte: $("messpunkte").checked, formstuecke: $("formstuecke").checked,
-      gelaende: $("gelaende").checked && !pruefung.dtm, bbox: pruefung.bbox } });
+      gelaende: $("gelaende").checked && !pruefung.dtm, bbox: pruefung.bbox,
+      geom: !!(pruefung.dtm && /\.ifc$/i.test(pruefung.dtm)), weitere: $("weitere").value.trim() } });
   $("k-lauf").scrollIntoView({ behavior: "smooth", block: "start" });
 };
 

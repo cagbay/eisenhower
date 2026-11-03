@@ -9,8 +9,16 @@ const DTM_CACHE = "pl-bestand-swissalti3d";
 let py = null;
 let bibliothekGeladen = false;
 let skripteBereit = false;
+let geomGeladen = false;
+let schluesselRoh = null;
 const kacheln = new Map();      // URL -> Uint8Array (im Speicher, für weitere Läufe)
 
+const GEOM = [
+  "ifcopenshell_geometry_kernel_opencascade-0.9.1-cp313-cp313-pyodide_2025_0_wasm32.whl",
+  "ifcopenshell_geometry_mapping_ifc4-0.9.1-cp313-cp313-pyodide_2025_0_wasm32.whl",
+  "ifcopenshell_geometry_mapping_ifc2x3-0.9.1-cp313-cp313-pyodide_2025_0_wasm32.whl",
+  "ifcopenshell_geometry_mapping_ifc4x3_add2-0.9.1-cp313-cp313-pyodide_2025_0_wasm32.whl",
+];
 const melde = (typ, daten = {}, transfer) => self.postMessage({ typ, ...daten }, transfer || []);
 const log = (text) => melde("log", { text });
 
@@ -68,13 +76,19 @@ await micropip.install(list(_wheels), deps=False)
 }
 
 // ------------------------------------------------------------------ Skripte (verschlüsselt)
-async function skripteLaden(rohSchluessel) {
-  const info = JSON.parse(new TextDecoder().decode(await holeBytes("app/skripte.json")));
-  const daten = await holeBytes("app/skripte.enc");
+async function entschluesseln(name, rohSchluessel) {
+  const info = JSON.parse(new TextDecoder().decode(await holeBytes(`app/${name}.json`)));
+  const daten = await holeBytes(`app/${name}.enc`);
   const key = await crypto.subtle.importKey("raw", b64(rohSchluessel), "AES-GCM", false, ["decrypt"]);
-  let zip;
-  try { zip = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(info.iv) }, key, daten)); }
-  catch { return false; }
+  try { return { info, daten: new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(info.iv) }, key, daten)) }; }
+  catch { return null; }
+}
+
+async function skripteLaden(rohSchluessel) {
+  const e = await entschluesseln("skripte", rohSchluessel);
+  if (!e) return false;
+  schluesselRoh = rohSchluessel;
+  const zip = e.daten;
   py.FS.writeFile("/tmp/skripte.zip", zip);
   await py.runPythonAsync(`
 import zipfile, os, sys, io, runpy, subprocess, contextlib, types, shutil, json
@@ -116,7 +130,28 @@ def projekt_leeren():
         shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
 `);
   skripteBereit = true;
-  return true;
+  return { stand: e.info.stand || "", projekte: JSON.parse(py.runPython(`
+p = "/app/bestand/projekte.json"
+open(p, encoding="utf-8").read() if os.path.exists(p) else "{}"
+`)) };
+}
+
+async function bibliothekHinterlegt() {
+  melde("bibliothek_lade");
+  const e = await entschluesseln("bibliothek", schluesselRoh);
+  if (!e) return 0;
+  return await bibliothekSetzen(e.daten.buffer);
+}
+
+async function geomLaden() {
+  if (geomGeladen) return;
+  log("Geometriekern von IfcOpenShell wird geladen (für das Geländemodell als IFC)");
+  py.globals.set("_geom", GEOM.map((w) => BASIS + "wheels/" + w));
+  await py.runPythonAsync(`
+import micropip
+await micropip.install(list(_geom), deps=False)
+`);
+  geomGeladen = true;
 }
 
 // ------------------------------------------------------------------ Projekt
@@ -230,9 +265,11 @@ async function rechnen(dateien, o) {
     }
   }
   melde("gelaende", { text: "" });
+  if (o.geom) await geomLaden();
   py.globals.set("_argv", ["bestand_lauf.py", "/projekt", "--projekt", o.projekt, "--ort", o.ort || o.projekt,
     "--messpunkte", o.messpunkte ? "ja" : "nein", "--formstuecke", o.formstuecke && bibliothekGeladen ? "ja" : "nein",
-    ...(bibliothekGeladen ? ["--bibliothek", "/app/bibliothek"] : [])]);
+    ...(bibliothekGeladen ? ["--bibliothek", "/app/bibliothek"] : []),
+    ...(o.weitere ? ["--weitere", o.weitere] : [])]);
   const rc = await py.runPythonAsync(`
 B = frisch(); B.P = B.Protokoll()
 sys.argv = list(_argv)
@@ -261,8 +298,9 @@ self.onmessage = async (ev) => {
     if (m.typ === "starten") await starten();
     else if (m.typ === "schluessel") {
       const ok = await skripteLaden(m.schluessel);
-      melde(ok ? "entsperrt" : "gesperrt");
+      melde(ok ? "entsperrt" : "gesperrt", ok || {});
     }
+    else if (m.typ === "bibliothek_hinterlegt") melde("bibliothek", { anzahl: await bibliothekHinterlegt(), hinterlegt: true });
     else if (m.typ === "bibliothek") melde("bibliothek", { anzahl: await bibliothekSetzen(m.daten) });
     else if (m.typ === "pruefen") melde("geprueft", { ergebnis: await pruefen(m.dateien) });
     else if (m.typ === "rechnen") {
