@@ -1,0 +1,421 @@
+<!doctype html>
+<!-- PL-Bestandsmodell Generator v1.0. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Caglar Baysal">
+<meta name="robots" content="noindex">
+<title>PL-Bestandsmodell</title>
+<meta name="theme-color" content="#0b67a3">
+<link rel="icon" type="image/png" sizes="32x32" href="../ifc/icons/favicon-32-v2.png">
+<link rel="apple-touch-icon" href="../ifc/icons/apple-touch-icon-v2.png">
+<style>
+:root {
+  --bg: #eef1f4; --karte: #ffffff; --text: #1d2730; --leise: #5d6b78; --linie: #d2d9df;
+  --akzent: #0b67a3; --akzent-hell: #e4eff8; --gut: #1f7a3f; --gut-hell: #e7f5ec;
+  --warn: #8f5600; --warn-hell: #fcf2e1; --fehler: #c4302b; --fehler-hell: #fbe9e8;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1317; --karte: #131b21; --text: #e2e8ed; --leise: #8e9eab; --linie: #24313b;
+    --akzent: #4aa3e0; --akzent-hell: #15283a; --gut: #5cc77f; --gut-hell: #142619;
+    --warn: #e7a73c; --warn-hell: #2b2214; --fehler: #ff6b63; --fehler-hell: #321a19;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1317; --karte: #131b21; --text: #e2e8ed; --leise: #8e9eab; --linie: #24313b;
+  --akzent: #4aa3e0; --akzent-hell: #15283a; --gut: #5cc77f; --gut-hell: #142619;
+  --warn: #e7a73c; --warn-hell: #2b2214; --fehler: #ff6b63; --fehler-hell: #321a19;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.5 "Barlow", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 880px; margin: 0 auto; padding: 24px 16px 64px; }
+header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+header h1 { font-size: 22px; margin: 0; }
+.tag { font: 12px var(--mono); color: var(--leise); border: 1px solid var(--linie); border-radius: 5px; padding: 1px 6px; }
+.unter { color: var(--leise); margin: 4px 0 20px; }
+.karte { background: var(--karte); border: 1px solid var(--linie); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+.karte h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nr { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--akzent-hell); color: var(--akzent); font-size: 12px; font-weight: 700; flex: none; }
+.leise { color: var(--leise); font-size: 13px; font-weight: 400; }
+.balken { height: 6px; background: var(--linie); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+.balken > div { height: 100%; width: 0; background: var(--akzent); transition: width .4s; }
+.zone { border: 2px dashed var(--linie); border-radius: 10px; padding: 26px 14px; text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s; }
+.zone.ueber { border-color: var(--akzent); background: var(--akzent-hell); }
+.zone strong { display: block; font-size: 16px; margin-bottom: 4px; }
+.liste { list-style: none; padding: 0; margin: 12px 0 0; }
+.liste li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--linie); font-size: 14px; }
+.liste li:first-child { border-top: 0; }
+.liste li > span:first-child { overflow-wrap: anywhere; }
+.rolle { font-size: 12px; padding: 1px 8px; border-radius: 10px; background: var(--akzent-hell); color: var(--akzent); white-space: nowrap; }
+.rolle.aus { background: var(--fehler-hell); color: var(--fehler); }
+.rolle.neutral { background: var(--linie); color: var(--leise); }
+.meldung { padding: 8px 12px; border-radius: 8px; margin-top: 8px; font-size: 14px; overflow-wrap: anywhere; }
+.meldung.warn { background: var(--warn-hell); color: var(--warn); }
+.meldung.gut { background: var(--gut-hell); color: var(--gut); }
+.meldung.fehler { background: var(--fehler-hell); color: var(--fehler); }
+.meldung.info { background: var(--akzent-hell); color: var(--akzent); }
+.reihe { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+@media (max-width: 560px) { .reihe { grid-template-columns: 1fr; } }
+label.feld { display: block; font-size: 13px; color: var(--leise); }
+label.feld input, input.pw { display: block; width: 100%; margin-top: 3px; padding: 9px 11px; font: inherit; color: var(--text);
+  background: var(--bg); border: 1px solid var(--linie); border-radius: 8px; }
+.schalter { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; cursor: pointer; }
+.schalter input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--akzent); flex: none; }
+.schalter small { display: block; color: var(--leise); }
+button { font: inherit; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; }
+button.haupt { background: var(--akzent); color: #fff; font-weight: 600; }
+button.haupt:disabled { opacity: .45; cursor: default; }
+button.leicht { background: var(--akzent-hell); color: var(--akzent); padding: 6px 12px; font-size: 13px; }
+button.x { background: transparent; color: var(--leise); padding: 2px 8px; font-size: 16px; }
+.aktionen { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+pre.log { font: 12px/1.45 var(--mono); background: var(--bg); border: 1px solid var(--linie); border-radius: 8px;
+  padding: 10px 12px; max-height: 340px; overflow: auto; white-space: pre-wrap; margin: 10px 0 0; }
+.ergebnis { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ergebnis a { display: inline-flex; align-items: center; text-decoration: none; color: var(--akzent);
+  background: var(--akzent-hell); padding: 7px 12px; border-radius: 8px; font-size: 14px; }
+.ergebnis a.ifc { background: var(--akzent); color: #fff; font-weight: 600; }
+img.plan { max-width: 100%; border-radius: 8px; border: 1px solid var(--linie); margin-top: 12px; background: #fff; }
+.versteckt { display: none !important; }
+.gesperrt { opacity: .5; pointer-events: none; }
+footer { color: var(--leise); font-size: 12px; text-align: center; margin-top: 24px; }
+footer a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--akzent)" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/></svg>
+    <h1>PL-Bestandsmodell</h1><span class="tag">v1.0</span>
+  </header>
+  <p class="unter">Shapefile Export und DXF hineinziehen, das 3D Bestandsmodell (IFC4, LV95, LN02) entsteht hier im Browser. Die Projektdaten verlassen das Gerät nicht.</p>
+
+  <section class="karte" id="k-motor">
+    <h2><span class="nr">1</span> Rechenkern</h2>
+    <div id="motor-text" class="leise">Wird vorbereitet</div>
+    <div class="balken"><div id="motor-balken"></div></div>
+    <form id="login" class="versteckt" autocomplete="on" style="margin-top:14px">
+      <div class="leise" style="margin-bottom:6px">Die WVZ Skripte sind geschützt. Passwort wie beim IFC Viewer.</div>
+      <input type="text" name="username" value="IFC Viewer" autocomplete="username" class="versteckt" aria-hidden="true">
+      <input class="pw" type="password" id="pw" autocomplete="current-password" placeholder="Passwort" aria-label="Passwort">
+      <label class="schalter"><input type="checkbox" id="merken" checked><span>Auf diesem Gerät angemeldet bleiben</span></label>
+      <button class="haupt" id="pw-knopf" type="submit">Entsperren</button>
+      <div id="pw-fehler" class="meldung fehler versteckt"></div>
+    </form>
+  </section>
+
+  <section class="karte" id="k-bib">
+    <h2><span class="nr">2</span> WVZ Bauteilbibliothek <span class="leise">für die Formstücke, einmal pro Gerät</span></h2>
+    <div id="bib-status" class="leise">Noch keine Bibliothek auf diesem Gerät.</div>
+    <div class="aktionen">
+      <button class="leicht" id="bib-knopf" type="button">Bibliothek ZIP wählen</button>
+      <span class="leise">WVZ_Bauteile_IFC43_v2_ohne_Logo_JJMMTT.zip</span>
+      <input type="file" id="bib-datei" accept=".zip" class="versteckt">
+    </div>
+  </section>
+
+  <section class="karte" id="k-projekt">
+    <h2><span class="nr">3</span> Projektdateien</h2>
+    <div class="zone" id="zone" role="button" tabindex="0">
+      <strong>Dateien oder Projektordner hierher ziehen</strong>
+      <span class="leise">Shapefile Export (ZIP), Werkleitungs DXF, Werkplan DXF, optional Geländemodell und Plankoten</span>
+    </div>
+    <input type="file" id="projekt-dateien" multiple class="versteckt">
+    <ul class="liste" id="liste"></ul>
+    <div id="pruefung"></div>
+  </section>
+
+  <section class="karte" id="k-optionen">
+    <h2><span class="nr">4</span> Einstellungen</h2>
+    <div class="reihe">
+      <label class="feld">Projekt <input id="projekt" placeholder="z.B. 15075 Kaeferholz"></label>
+      <label class="feld">Ort <input id="ort" placeholder="z.B. Kaeferholzstrasse"></label>
+    </div>
+    <label class="schalter"><input type="checkbox" id="gelaende" checked>
+      <span>Geländemodell swissALTI3D automatisch holen<small id="gelaende-text">0.5 m Raster direkt von swisstopo, Perimeter plus 50 m. Für Überdeckung und Terrain.</small></span></label>
+    <label class="schalter"><input type="checkbox" id="messpunkte" checked>
+      <span>Messpunkte ins IFC<small>Rote Kugeln mit Kote, zur Kontrolle. Für die Abgabe meist aus.</small></span></label>
+    <label class="schalter"><input type="checkbox" id="formstuecke" checked>
+      <span>Formstücke aus der WVZ Bauteilbibliothek<small>T Stücke, Bögen, Reduktionen, Kupplungen. Braucht Bibliothek und Werkleitungs DXF.</small></span></label>
+    <div class="aktionen">
+      <button class="haupt" id="start" disabled type="button">PL-Bestandsmodell erzeugen</button>
+      <span class="leise" id="start-hinweis">Rechenkern lädt noch</span>
+    </div>
+  </section>
+
+  <section class="karte versteckt" id="k-lauf">
+    <h2><span class="nr">5</span> Ergebnis</h2>
+    <div id="lauf-status"></div>
+    <div class="ergebnis" id="ergebnis"></div>
+    <img class="plan versteckt" id="plan" alt="Kontrollplan Höhenherkunft">
+    <details id="log-box"><summary class="leise" style="cursor:pointer;margin-top:10px">Protokoll</summary>
+      <pre class="log" id="log"></pre></details>
+  </section>
+
+  <footer>PL-Bestandsmodell v1.0 vom 03.11.2026 · Skripte shp2ifc Stand 14.10.2026 · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
+    Python im Browser: Pyodide (MPL 2.0), IfcOpenShell (LGPL 3.0), numpy, scipy, shapely, ezdxf, pyshp, tifffile · Geländemodell © swisstopo
+    · <a href="#" id="abmelden">Abmelden</a></footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const worker = new Worker("worker.js");
+let motor = false, entsperrt = false, bibliothek = 0, rechnet = false, bibName = "";
+let dateien = [];       // {name, daten: ArrayBuffer, groesse}
+let pruefung = null;
+const SCHLUESSEL = ["plbg-key", "ifcv-key"];   // eigener und der des IFC Viewers (gleiches Passwort, gleicher Salt)
+let info = null;        // app/skripte.json: salt, iv, iter
+
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+
+// ---------- Speicher im Browser: Bibliothek in IndexedDB, Schlüssel in localStorage
+const DB = { name: "pl_bestand_generator", store: "dateien" };
+function dbOeffnen() {
+  return new Promise((ok, nein) => {
+    const r = indexedDB.open(DB.name, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(DB.store);
+    r.onsuccess = () => ok(r.result); r.onerror = () => nein(r.error);
+  });
+}
+async function dbLesen(k) {
+  try { const db = await dbOeffnen();
+    return await new Promise((ok) => { const r = db.transaction(DB.store).objectStore(DB.store).get(k);
+      r.onsuccess = () => ok(r.result); r.onerror = () => ok(null); });
+  } catch { return null; }
+}
+async function dbSchreiben(k, v) {
+  try { const db = await dbOeffnen();
+    await new Promise((ok) => { const t = db.transaction(DB.store, "readwrite"); t.objectStore(DB.store).put(v, k);
+      t.oncomplete = ok; t.onerror = ok; });
+  } catch {}
+}
+function lsLesen(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } }
+function lsSchreiben(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+function lsLoeschen(k) { try { localStorage.removeItem(k); } catch {} }
+const b2u = (b) => Uint8Array.from(atob(b), (c) => c.charCodeAt(0));
+const u2b = (u) => { let s = ""; for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode.apply(null, u.subarray(i, i + 32768)); return btoa(s); };
+
+// ---------- Anmeldung
+let versuchterSchluessel = null, gemerkt = false;
+async function anmelden() {
+  try { info = await (await fetch("app/skripte.json", { cache: "no-cache" })).json(); }
+  catch { $("motor-text").textContent = "Die Skripte konnten nicht geladen werden."; return; }
+  for (const k of SCHLUESSEL) {
+    const s = lsLesen(k);
+    if (s && s.salt === info.salt && s.key) { versuchterSchluessel = s.key; gemerkt = true; worker.postMessage({ typ: "schluessel", schluessel: s.key }); return; }
+  }
+  zeigeLogin();
+}
+function zeigeLogin(fehler) {
+  $("login").classList.remove("versteckt");
+  $("motor-text").innerHTML = `<span style="color:var(--gut)">Rechenkern bereit.</span> Noch gesperrt.`;
+  if (fehler) { $("pw-fehler").textContent = fehler; $("pw-fehler").classList.remove("versteckt"); $("pw").select(); }
+  $("pw-knopf").disabled = false; $("pw-knopf").textContent = "Entsperren";
+  $("pw").focus();
+}
+$("login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pw = $("pw").value; if (!pw || !info) return;
+  $("pw-knopf").disabled = true; $("pw-knopf").textContent = "Wird geprüft"; $("pw-fehler").classList.add("versteckt");
+  const basis = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
+  const roh = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: b2u(info.salt), iterations: info.iter }, basis, 256));
+  versuchterSchluessel = u2b(roh); gemerkt = false;
+  worker.postMessage({ typ: "schluessel", schluessel: versuchterSchluessel });
+});
+$("abmelden").onclick = (e) => { e.preventDefault(); lsLoeschen("plbg-key"); location.reload(); };
+
+// ---------- Nachrichten des Rechenkerns
+worker.onmessage = async (ev) => {
+  const m = ev.data;
+  if (m.typ === "start") { $("motor-text").textContent = m.text; $("motor-balken").style.width = m.prozent + "%"; }
+  else if (m.typ === "motor") { motor = true; $("motor-balken").style.width = "100%"; $("motor-text").textContent = "Skripte werden entsperrt"; motorZeit = m.sekunden; anmelden(); }
+  else if (m.typ === "gesperrt") {
+    if (gemerkt) { SCHLUESSEL.forEach((k) => { const s = lsLesen(k); if (s && s.key === versuchterSchluessel) lsLoeschen(k); }); gemerkt = false; zeigeLogin(); }
+    else zeigeLogin("Das Passwort stimmt nicht.");
+  }
+  else if (m.typ === "entsperrt") {
+    entsperrt = true; $("login").classList.add("versteckt");
+    if (!gemerkt && $("merken").checked) lsSchreiben("plbg-key", { salt: info.salt, key: versuchterSchluessel });
+    $("motor-text").innerHTML = `<span style="color:var(--gut)">Bereit</span> <span class="leise">(${motorZeit} s, beim nächsten Mal schneller)</span>`;
+    const g = await dbLesen("bibliothek");
+    if (g) { bibName = g.name; $("bib-status").textContent = "Bibliothek wird geladen"; worker.postMessage({ typ: "bibliothek", daten: g.daten }); }
+    if (dateien.length) pruefen();
+    zustand();
+  }
+  else if (m.typ === "bibliothek") {
+    bibliothek = m.anzahl;
+    $("bib-status").innerHTML = m.anzahl
+      ? `<span style="color:var(--gut)">${m.anzahl} Bauteile bereit</span> <span class="leise">${bibName}, auf diesem Gerät gespeichert</span>`
+      : `<span style="color:var(--fehler)">Im ZIP wurden keine IFC Bauteile gefunden.</span>`;
+    zustand();
+  }
+  else if (m.typ === "geprueft") { pruefung = m.ergebnis; zeigePruefung(); zustand(); }
+  else if (m.typ === "gelaende") {
+    const el = $("gelaende-status"); if (el) { el.textContent = m.text; el.classList.toggle("versteckt", !m.text); }
+  }
+  else if (m.typ === "log") { const l = $("log"); l.textContent += m.text + "\n"; l.scrollTop = l.scrollHeight; }
+  else if (m.typ === "fertig") fertig(m);
+  else if (m.typ === "fehler") {
+    rechnet = false; zustand();
+    $("k-lauf").classList.remove("versteckt");
+    $("lauf-status").innerHTML = `<div class="meldung fehler">Fehler im Rechenkern. Details im Protokoll.</div>`;
+    $("log").textContent += "\n" + m.text; $("log-box").open = true;
+  }
+};
+let motorZeit = 0;
+worker.postMessage({ typ: "starten" });
+
+// ---------- Bibliothek
+async function bibliothekNehmen(f) {
+  const daten = await f.arrayBuffer(); bibName = f.name;
+  await dbSchreiben("bibliothek", { name: f.name, daten: daten.slice(0) });
+  $("bib-status").textContent = "Bibliothek wird entpackt";
+  if (entsperrt) worker.postMessage({ typ: "bibliothek", daten }, [daten]);
+}
+$("bib-knopf").onclick = () => $("bib-datei").click();
+$("bib-datei").onchange = (e) => { if (e.target.files[0]) bibliothekNehmen(e.target.files[0]); };
+
+// ---------- Projektdateien: Ziehen, auch ganze Ordner
+const zone = $("zone");
+zone.onclick = () => $("projekt-dateien").click();
+zone.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("projekt-dateien").click(); } };
+$("projekt-dateien").onchange = async (e) => { await aufnehmen([...e.target.files]); e.target.value = ""; };
+["dragenter", "dragover"].forEach((t) => zone.addEventListener(t, (e) => { e.preventDefault(); zone.classList.add("ueber"); }));
+["dragleave", "drop"].forEach((t) => zone.addEventListener(t, () => zone.classList.remove("ueber")));
+window.addEventListener("dragover", (e) => e.preventDefault());
+window.addEventListener("drop", (e) => e.preventDefault());
+zone.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  const eintraege = [...e.dataTransfer.items].map((i) => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  const gefunden = [];
+  async function lies(x) {
+    if (x.isFile) gefunden.push(await new Promise((ok, nein) => x.file(ok, nein)));
+    else if (x.isDirectory) {
+      if (/^ausgabe$/i.test(x.name)) return;
+      const r = x.createReader(); let teil;
+      do { teil = await new Promise((ok, nein) => r.readEntries(ok, nein)); for (const y of teil) await lies(y); } while (teil.length);
+    }
+  }
+  if (eintraege.length) for (const x of eintraege) await lies(x); else gefunden.push(...e.dataTransfer.files);
+  await aufnehmen(gefunden);
+});
+
+const RELEVANT = /\.(zip|dxf|tif|tiff|xyz|csv|ifc)$/i;
+async function aufnehmen(liste) {
+  for (const f of liste) {
+    if (f.name.startsWith(".") || !RELEVANT.test(f.name)) continue;
+    if (/WVZ_Bauteile_IFC43/i.test(f.name)) { await bibliothekNehmen(f); continue; }
+    dateien = dateien.filter((d) => d.name !== f.name);
+    dateien.push({ name: f.name, daten: await f.arrayBuffer(), groesse: f.size });
+  }
+  if (!$("projekt").value) {
+    const shp = dateien.find((d) => /\.zip$/i.test(d.name));
+    const m = shp && shp.name.match(/(?:^|_)(\d{5})(?:_|\b)/);
+    if (m) $("projekt").value = m[1];
+  }
+  zeigeListe(); if (entsperrt) pruefen(); zustand();
+}
+
+function zeigeListe() {
+  $("liste").innerHTML = "";
+  dateien.forEach((d, i) => {
+    const mb = d.groesse > 1e6 ? (d.groesse / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(d.groesse / 1e3)) + " kB";
+    const li = document.createElement("li");
+    li.innerHTML = `<span></span><span style="white-space:nowrap"><span class="rolle neutral" id="rolle-${i}">wird geprüft</span><button class="x" type="button" aria-label="entfernen">×</button></span>`;
+    li.firstChild.textContent = d.name + " "; const s = document.createElement("span"); s.className = "leise"; s.textContent = mb; li.firstChild.appendChild(s);
+    li.querySelector("button").onclick = () => { dateien.splice(i, 1); zeigeListe(); pruefung = null; $("pruefung").innerHTML = ""; if (dateien.length && entsperrt) pruefen(); zustand(); };
+    $("liste").appendChild(li);
+  });
+}
+
+function pruefen() {
+  pruefung = null; zustand();
+  $("pruefung").innerHTML = `<div class="meldung info">Eingangsprüfung läuft</div>`;
+  worker.postMessage({ typ: "pruefen", dateien: dateien.map((d) => ({ name: d.name, daten: d.daten.slice(0) })) });
+}
+
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function zeigePruefung() {
+  const p = pruefung;
+  dateien.forEach((d, i) => {
+    const el = $("rolle-" + i); if (!el) return;
+    let t = "nicht verwendet", k = "rolle aus";
+    if (p.shp && p.shp_name === d.name) { t = "Shapefile Export"; k = "rolle"; }
+    else if (p.dxf.includes(d.name)) { t = "Werkleitungs DXF"; k = "rolle"; }
+    else if (p.werkplan.includes(d.name)) { t = "Werkplan DXF"; k = "rolle"; }
+    else if (p.dtm && (p.dtm === d.name || /\.(zip|tif|tiff)$/i.test(d.name) && p.dtm === d.name)) { t = "Geländemodell"; k = "rolle"; }
+    else if (p.plankoten.includes(d.name)) { t = "Plankoten"; k = "rolle"; }
+    el.textContent = t; el.className = k;
+  });
+  let h = "";
+  if (!p.shp) h += `<div class="meldung fehler">Kein brauchbarer Shapefile Export gefunden (ZIP mit Leitung.shp). Ein ZIP mit weiteren ZIPs darin bitte zuerst entpacken.</div>`;
+  for (const w of p.warnungen) h += `<div class="meldung warn">${esc(w)}</div>`;
+  if (p.shp && !p.dxf.length) h += `<div class="meldung warn">Ohne Werkleitungs DXF fehlen Getriebeseite der Klappen, Koten nur im DXF, vertikale Bögen und die Formstücke.</div>`;
+  if (p.dtm && /\.ifc$/i.test(p.dtm)) h += `<div class="meldung warn">Geländemodell als IFC (${esc(p.dtm)}) geht im Browser noch nicht. Datei entfernen und swissALTI3D automatisch holen lassen.</div>`;
+  if (p.shp && !p.warnungen.length && p.dxf.length) h += `<div class="meldung gut">Eingang in Ordnung.</div>`;
+  h += `<details style="margin-top:8px"><summary class="leise" style="cursor:pointer">Details der Eingangsprüfung</summary><pre class="log">${esc(p.zeilen.join("\n"))}</pre></details>`;
+  $("pruefung").innerHTML = h;
+  $("gelaende-text").textContent = p.dtm ? `Nicht nötig: eigenes Geländemodell ${p.dtm} wird verwendet.`
+    : "0.5 m Raster direkt von swisstopo, Perimeter plus 50 m. Für Überdeckung und Terrain.";
+  $("gelaende").disabled = !!p.dtm;
+}
+
+function zustand() {
+  const ok = entsperrt && pruefung && pruefung.shp && !rechnet;
+  $("start").disabled = !ok;
+  $("start-hinweis").textContent = rechnet ? "Rechnet" : !motor ? "Rechenkern lädt noch" : !entsperrt ? "Zuerst entsperren"
+    : !dateien.length ? "Zuerst Projektdateien hineinziehen" : !pruefung ? "Eingangsprüfung läuft" : !pruefung.shp ? "Shapefile Export fehlt"
+    : ($("formstuecke").checked && !bibliothek) ? "Ohne Bibliothek entstehen keine Formstücke" : "";
+  ["k-bib", "k-projekt", "k-optionen"].forEach((id) => $(id).classList.toggle("gesperrt", !entsperrt));
+}
+$("formstuecke").onchange = zustand;
+zustand();
+
+// ---------- Rechnen
+$("start").onclick = () => {
+  if (pruefung && !pruefung.dxf.length && !confirm("Kein Werkleitungs DXF. Ohne DXF fehlen Getriebeseite der Klappen, Koten nur im DXF und vertikale Bögen. Trotzdem weiter?")) return;
+  rechnet = true; zustand();
+  $("k-lauf").classList.remove("versteckt"); $("ergebnis").innerHTML = ""; $("plan").classList.add("versteckt");
+  $("log").textContent = "";
+  $("lauf-status").innerHTML = `<div class="meldung info">Das Modell wird erzeugt. Je nach Projekt dauert das eine halbe bis einige Minuten.</div><div class="meldung info versteckt" id="gelaende-status"></div>`;
+  const projekt = $("projekt").value.trim() || "Projekt";
+  worker.postMessage({ typ: "rechnen", dateien: dateien.map((d) => ({ name: d.name, daten: d.daten.slice(0) })),
+    optionen: { projekt, ort: $("ort").value.trim() || projekt, messpunkte: $("messpunkte").checked, formstuecke: $("formstuecke").checked,
+      gelaende: $("gelaende").checked && !pruefung.dtm, bbox: pruefung.bbox } });
+  $("k-lauf").scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+const TYP = { ifc: "application/octet-stream", png: "image/png", txt: "text/plain;charset=utf-8",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
+function fertig(m) {
+  rechnet = false; zustand();
+  const prot = m.dateien.find((d) => d.name.startsWith("Protokoll_"));
+  const text = prot ? new TextDecoder().decode(prot.daten) : "";
+  const gut = /alle Kriterien erfüllt/.test(text);
+  const kopf = text.split("\n\n")[0];
+  const warnungen = kopf.startsWith("WARNUNGEN") ? kopf.split("\n").slice(1).map((w) => w.replace(/^\s*-\s*/, "")) : [];
+  $("lauf-status").innerHTML = (m.dateien.some((d) => d.name.endsWith(".ifc"))
+      ? `<div class="meldung ${gut ? "gut" : "warn"}">${esc(m.ordner)}: Modell erzeugt in ${m.sekunden} s. Abnahme ${gut ? "alle Kriterien erfüllt" : "mit Befunden, siehe Protokoll"}.</div>`
+      : `<div class="meldung fehler">Kein Modell erzeugt (Rückgabe ${m.rc}). Siehe Protokoll.</div>`)
+    + warnungen.map((w) => `<div class="meldung warn">${esc(w)}</div>`).join("");
+  $("ergebnis").innerHTML = "";
+  const reihen = m.dateien.slice().sort((a, b) => b.name.endsWith(".ifc") - a.name.endsWith(".ifc"));
+  for (const d of reihen) {
+    const ext = d.name.split(".").pop().toLowerCase();
+    const url = URL.createObjectURL(new Blob([d.daten], { type: TYP[ext] || "application/octet-stream" }));
+    const a = document.createElement("a"); a.href = url; a.download = d.name;
+    a.textContent = ext === "ifc" ? `IFC herunterladen (${(d.daten.byteLength / 1e6).toFixed(1)} MB)` : d.name.replace(/_\d{6}\.\w+$/, "").replace(/_/g, " ") + " (" + ext + ")";
+    if (ext === "ifc") a.className = "ifc";
+    $("ergebnis").appendChild(a);
+    if (ext === "png" && d.name.startsWith("Hoehenherkunft")) { $("plan").src = url; $("plan").classList.remove("versteckt"); }
+  }
+  if (!gut) $("log-box").open = true;
+}
+</script>
+</body>
+</html>
