@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- PL-Bestandsmodell Generator v1.0. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
+<!-- PL-Bestandsmodell Generator v1.1. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -91,7 +91,7 @@ footer a { color: inherit; }
 <main>
   <header>
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--akzent)" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/></svg>
-    <h1>PL-Bestandsmodell</h1><span class="tag">v1.0</span>
+    <h1>PL-Bestandsmodell</h1><span class="tag">v1.1</span>
   </header>
   <p class="unter">Shapefile Export und DXF hineinziehen, das 3D Bestandsmodell (IFC4, LV95, LN02) entsteht hier im Browser. Die Projektdaten verlassen das Gerät nicht.</p>
 
@@ -145,6 +145,8 @@ footer a { color: inherit; }
     <details id="erweitert" style="margin-top:6px"><summary class="leise" style="cursor:pointer">Projekteinstellungen <span id="vorlage-hinweis"></span></summary>
       <label class="feld" style="margin-top:8px">Weitere Optionen für shp2ifc
         <input id="weitere" placeholder="z.B. --koten-verwerfen 2820,1656600 --kreuzung-unter 65812,65813" spellcheck="false" autocomplete="off" style="font-family:var(--mono);font-size:13px"></label>
+      <label class="schalter versteckt" id="vorlage-dateien-zeile"><input type="checkbox" id="vorlage-dateien" checked>
+        <span>Projektdaten der Vorlage verwenden<small id="vorlage-dateien-text"></small></span></label>
       <div class="leise" style="margin-top:6px">Gleich wie «--weitere» bei bestand_lauf.py: --koten-verwerfen, --kreuzung-unter, --kulisse-stollen, --cover, --transport-dn usw. Für bekannte Projekte wird die Vorlage automatisch eingesetzt.</div>
     </details>
     <div class="aktionen">
@@ -162,7 +164,7 @@ footer a { color: inherit; }
       <pre class="log" id="log"></pre></details>
   </section>
 
-  <footer>PL-Bestandsmodell v1.0 vom 03.11.2026 · Skripte shp2ifc Stand 14.10.2026 · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
+  <footer>PL-Bestandsmodell v1.1 vom 04.11.2026 · Skripte shp2ifc Stand 16.10.2026 · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
     Python im Browser: Pyodide (MPL 2.0), IfcOpenShell (LGPL 3.0), numpy, scipy, shapely, ezdxf, pyshp, tifffile · Geländemodell © swisstopo
     · <a href="#" id="abmelden">Abmelden</a></footer>
 </main>
@@ -294,7 +296,7 @@ $("bib-zurueck").onclick = async () => {
 };
 
 // ---------- Projektvorlagen (aus dem verschlüsselten Skriptpaket, projekte.json)
-let projekte = {}, vorlageGesetzt = "";
+let projekte = {}, vorlageGesetzt = "", vorlageAktiv = null;
 function vorlage() {
   const nr = ($("projekt").value.match(/\d{5}/) || [""])[0];
   const v = projekte[nr];
@@ -305,6 +307,10 @@ function vorlage() {
   } else if (!v && $("weitere").value === vorlageGesetzt) {
     $("weitere").value = ""; vorlageGesetzt = ""; $("vorlage-hinweis").textContent = "";
   }
+  vorlageAktiv = v || null;
+  const d = (v && v.dateien) || [];
+  $("vorlage-dateien-zeile").classList.toggle("versteckt", !d.length);
+  $("vorlage-dateien-text").textContent = d.map((x) => x.split("/").pop()).join(", ") + (v && v.hinweis ? `. ${v.hinweis}` : "");
 }
 $("projekt").addEventListener("input", vorlage);
 $("bib-datei").onchange = (e) => { if (e.target.files[0]) bibliothekNehmen(e.target.files[0]); };
@@ -415,7 +421,8 @@ $("start").onclick = () => {
   worker.postMessage({ typ: "rechnen", dateien: dateien.map((d) => ({ name: d.name, daten: d.daten.slice(0) })),
     optionen: { projekt, ort: $("ort").value.trim() || projekt, messpunkte: $("messpunkte").checked, formstuecke: $("formstuecke").checked,
       gelaende: $("gelaende").checked && !pruefung.dtm, bbox: pruefung.bbox,
-      geom: !!(pruefung.dtm && /\.ifc$/i.test(pruefung.dtm)), weitere: $("weitere").value.trim() } });
+      geom: !!(pruefung.dtm && /\.ifc$/i.test(pruefung.dtm)), weitere: $("weitere").value.trim(),
+      vorlageDateien: vorlageAktiv && $("vorlage-dateien").checked ? (vorlageAktiv.dateien || []) : [] } });
   $("k-lauf").scrollIntoView({ behavior: "smooth", block: "start" });
 };
 

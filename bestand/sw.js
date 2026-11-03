@@ -1,6 +1,6 @@
 // Offline Cache des PL-Bestandsmodell Generators. Eigener Name (pl-bestand-...), damit Plattform und IFC Viewer
 // ihre Caches behalten und dieser Cache von ihnen nicht gelöscht wird. Version ändert mit jedem Build.
-const CACHE = "pl-bestand-v1.0-261103";
+const CACHE = "pl-bestand-v1.1-261104";
 const FEST = /\/(py|wheels)\//;   // Python Laufzeit und Pakete: unveränderlich, sofort aus dem Cache
 
 self.addEventListener("install", () => self.skipWaiting());

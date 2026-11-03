@@ -265,6 +265,10 @@ async function rechnen(dateien, o) {
     }
   }
   melde("gelaende", { text: "" });
+  for (const v of o.vorlageDateien || []) {            // Projektdaten aus der Vorlage (Stollen, Schachtteile, Längenprofil)
+    const name = v.split("/").pop();
+    if (!py.FS.analyzePath("/projekt/" + name).exists) py.FS.writeFile("/projekt/" + name, py.FS.readFile("/app/bestand/" + v));
+  }
   if (o.geom) await geomLaden();
   py.globals.set("_argv", ["bestand_lauf.py", "/projekt", "--projekt", o.projekt, "--ort", o.ort || o.projekt,
     "--messpunkte", o.messpunkte ? "ja" : "nein", "--formstuecke", o.formstuecke && bibliothekGeladen ? "ja" : "nein",
