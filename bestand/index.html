@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- PL-Bestandsmodell Generator v1.1. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
+<!-- PL-Bestandsmodell Generator v1.2. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -91,7 +91,7 @@ footer a { color: inherit; }
 <main>
   <header>
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--akzent)" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/></svg>
-    <h1>PL-Bestandsmodell</h1><span class="tag">v1.1</span>
+    <h1>PL-Bestandsmodell</h1><span class="tag">v1.2</span>
   </header>
   <p class="unter">Shapefile Export und DXF hineinziehen, das 3D Bestandsmodell (IFC4, LV95, LN02) entsteht hier im Browser. Die Projektdaten verlassen das Gerät nicht.</p>
 
@@ -164,7 +164,7 @@ footer a { color: inherit; }
       <pre class="log" id="log"></pre></details>
   </section>
 
-  <footer>PL-Bestandsmodell v1.1 vom 04.11.2026 · Skripte shp2ifc Stand 16.10.2026 · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
+  <footer>PL-Bestandsmodell v1.2 vom 04.11.2026 · Skripte shp2ifc Stand 16.10.2026 · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
     Python im Browser: Pyodide (MPL 2.0), IfcOpenShell (LGPL 3.0), numpy, scipy, shapely, ezdxf, pyshp, tifffile · Geländemodell © swisstopo
     · <a href="#" id="abmelden">Abmelden</a></footer>
 </main>
@@ -275,7 +275,8 @@ worker.onmessage = async (ev) => {
   else if (m.typ === "fehler") {
     rechnet = false; zustand();
     $("k-lauf").classList.remove("versteckt");
-    $("lauf-status").innerHTML = `<div class="meldung fehler">Fehler im Rechenkern. Details im Protokoll.</div>`;
+    $("lauf-status").innerHTML = motor ? `<div class="meldung fehler">Fehler im Rechenkern. Details im Protokoll.</div>`
+      : `<div class="meldung fehler">Der Rechenkern konnte nicht starten. Das Protokoll zeigt, welche Datei nicht geladen werden konnte.</div>`;
     $("log").textContent += "\n" + m.text; $("log-box").open = true;
   }
 };

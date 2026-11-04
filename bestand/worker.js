@@ -48,13 +48,40 @@ async function holeBytes(pfad) {
 }
 const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
+// ------------------------------------------------------------------ Startprüfung (nur Diagnose)
+const MAGIE = { wasm: [0x00, 0x61, 0x73, 0x6d], zip: [0x50, 0x4b], whl: [0x50, 0x4b] };
+async function pruefeDatei(pfad, art) {
+  try {
+    const r = await fetch(BASIS + pfad, { cache: "no-cache" });
+    const u = new Uint8Array(await r.arrayBuffer());
+    const ok = r.ok && MAGIE[art].every((b, i) => u[i] === b);
+    return { ok, text: `${pfad}: HTTP ${r.status}, ${r.headers.get("content-type") || "ohne Typ"}, ${(u.length / 1e6).toFixed(2)} MB`
+      + (ok ? "" : r.ok ? ", Inhalt ist nicht die erwartete Datei (z.B. Hinweisseite eines Filters)" : "") };
+  } catch (ex) { return { ok: false, text: `${pfad}: nicht ladbar (${ex.message || ex})` }; }
+}
+async function startpruefung() {
+  log(`Browser: ${self.navigator.userAgent}`);
+  log(`WebAssembly: ${typeof WebAssembly === "object" ? "vorhanden" : "nicht verfügbar (Browser oder Richtlinie)"}`);
+  const ziele = [["py/pyodide.asm.wasm", "wasm"], ["py/python_stdlib.zip", "zip"],
+    ["wheels/ifcopenshell-0.9.1-cp313-cp313-pyodide_2025_0_wasm32.whl", "whl"]];
+  for (const e of await Promise.all(ziele.map(([p, a]) => pruefeDatei(p, a)))) log((e.ok ? "OK        " : "BLOCKIERT ") + e.text);
+}
+
 // ------------------------------------------------------------------ Rechenkern
 async function starten() {
   const t0 = performance.now();
   const schritt = (s, p) => melde("start", { text: s, prozent: p });
   schritt("Python wird geladen", 5);
   importScripts(BASIS + "py/pyodide.js", BASIS + "lzw.js");
-  py = await self.loadPyodide({ indexURL: BASIS + "py/" });
+  const meldungen = [];
+  try {
+    py = await self.loadPyodide({ indexURL: BASIS + "py/", stdout: (t) => meldungen.push(t), stderr: (t) => meldungen.push(t) });
+  } catch (ex) {
+    meldungen.forEach((t) => log(t));
+    log("\n===== Startprüfung =====");
+    await startpruefung();
+    throw ex;
+  }
   schritt("numpy, scipy und shapely werden geladen", 30);
   await py.loadPackage(["numpy", "scipy", "shapely", "micropip", "matplotlib", "pyparsing", "typing-extensions", "fonttools"],
     { messageCallback: () => {} });
