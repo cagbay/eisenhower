@@ -67,10 +67,29 @@ async function startpruefung() {
   for (const e of await Promise.all(ziele.map(([p, a]) => pruefeDatei(p, a)))) log((e.ok ? "OK        " : "BLOCKIERT ") + e.text);
 }
 
+// ------------------------------------------------------------------ Laufzeitdateien lokal (Firmennetz)
+// Sperrt eine Firmen Firewall den Hintergrundabruf der zwei ZIP (python_stdlib.zip, libopenblas), lädt der Nutzer
+// sie einmal von Hand herunter (erlaubter, gescannter Weg) und legt sie ab. Der Worker serviert dann genau diese
+// zwei Dateien aus den übergebenen Bytes an Pyodide. Keine Netz-Tarnung: nur vom Nutzer bereitgestellte Dateien.
+const RUNTIME_ZIP = /\/(python_stdlib\.zip|libopenblas-[\d.]+\.zip)(?:[?#]|$)/;
+let runtimeBytes = null;
+function installRuntime() {
+  if (!runtimeBytes || self.__rtInstalliert) return;
+  self.__rtInstalliert = true;
+  const echt = self.fetch.bind(self);
+  self.fetch = async (input, init) => {
+    const url = typeof input === "string" ? input : (input && (input.url || input.href)) || String(input);
+    const m = url.match(RUNTIME_ZIP);
+    if (m && runtimeBytes[m[1]]) return new Response(runtimeBytes[m[1]], { status: 200, headers: { "Content-Type": "application/octet-stream" } });
+    return echt(input, init);
+  };
+}
+
 // ------------------------------------------------------------------ Rechenkern
-async function starten() {
+async function starten(runtime) {
   const t0 = performance.now();
   const schritt = (s, p) => melde("start", { text: s, prozent: p });
+  if (runtime) { runtimeBytes = {}; for (const [n, b] of Object.entries(runtime)) runtimeBytes[n] = new Uint8Array(b); installRuntime(); }
   schritt("Python wird geladen", 5);
   importScripts(BASIS + "py/pyodide.js", BASIS + "lzw.js");
   const meldungen = [];
@@ -326,7 +345,7 @@ d[-1] if d else ""
 self.onmessage = async (ev) => {
   const m = ev.data;
   try {
-    if (m.typ === "starten") await starten();
+    if (m.typ === "starten") await starten(m.runtime);
     else if (m.typ === "schluessel") {
       const ok = await skripteLaden(m.schluessel);
       melde(ok ? "entsperrt" : "gesperrt", ok || {});

@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- PL-Bestandsmodell Generator v1.2. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
+<!-- PL-Bestandsmodell Generator v1.3. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -81,6 +81,8 @@ pre.log { font: 12px/1.45 var(--mono); background: var(--bg); border: 1px solid 
   background: var(--akzent-hell); padding: 7px 12px; border-radius: 8px; font-size: 14px; }
 .ergebnis a.ifc { background: var(--akzent); color: #fff; font-weight: 600; }
 img.plan { max-width: 100%; border-radius: 8px; border: 1px solid var(--linie); margin-top: 12px; background: #fff; }
+#laufzeit a.ergebnis-link { display: inline-flex; align-items: center; text-decoration: none; color: var(--akzent);
+  background: var(--akzent-hell); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
 .versteckt { display: none !important; }
 .gesperrt { opacity: .5; pointer-events: none; }
 footer { color: var(--leise); font-size: 12px; text-align: center; margin-top: 24px; }
@@ -91,7 +93,7 @@ footer a { color: inherit; }
 <main>
   <header>
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--akzent)" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/></svg>
-    <h1>PL-Bestandsmodell</h1><span class="tag">v1.2</span>
+    <h1>PL-Bestandsmodell</h1><span class="tag">v1.3</span>
   </header>
   <p class="unter">Shapefile Export und DXF hineinziehen, das 3D Bestandsmodell (IFC4, LV95, LN02) entsteht hier im Browser. Die Projektdaten verlassen das Gerät nicht.</p>
 
@@ -107,6 +109,24 @@ footer a { color: inherit; }
       <button class="haupt" id="pw-knopf" type="submit">Entsperren</button>
       <div id="pw-fehler" class="meldung fehler versteckt"></div>
     </form>
+    <div id="laufzeit" class="versteckt" style="margin-top:14px">
+      <div class="meldung warn" style="margin-top:0">Dieser Rechner lässt die zwei Python Dateien nicht im Hintergrund laden (vermutlich ein Webfilter). Lade sie einmal herunter und lege sie hier ab. Danach startet die Seite auf diesem Gerät von selbst.</div>
+      <ol style="margin:12px 0; padding-left:20px; font-size:14px; line-height:1.8">
+        <li>Beide Dateien herunterladen:
+          <div class="aktionen" style="margin-top:6px">
+            <a class="ergebnis-link" id="dl1" download>python_stdlib.zip</a>
+            <a class="ergebnis-link" id="dl2" download>libopenblas-0.3.26.zip</a>
+          </div>
+        </li>
+        <li style="margin-top:8px">Beide hier auswählen (zusammen):
+          <div class="aktionen" style="margin-top:6px">
+            <button class="leicht" id="rt-knopf" type="button">Heruntergeladene Dateien wählen</button>
+            <input type="file" id="rt-datei" accept=".zip" multiple class="versteckt">
+          </div>
+        </li>
+      </ol>
+      <div id="rt-status" class="leise"></div>
+    </div>
   </section>
 
   <section class="karte" id="k-bib">
@@ -164,7 +184,7 @@ footer a { color: inherit; }
       <pre class="log" id="log"></pre></details>
   </section>
 
-  <footer>PL-Bestandsmodell v1.2 vom 04.11.2026 · Skripte shp2ifc Stand 16.10.2026 · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
+  <footer>PL-Bestandsmodell v1.3 vom 04.11.2026 · Skripte shp2ifc Stand 16.10.2026 · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
     Python im Browser: Pyodide (MPL 2.0), IfcOpenShell (LGPL 3.0), numpy, scipy, shapely, ezdxf, pyshp, tifffile · Geländemodell © swisstopo
     · <a href="#" id="abmelden">Abmelden</a></footer>
 </main>
@@ -281,7 +301,54 @@ worker.onmessage = async (ev) => {
   }
 };
 let motorZeit = 0;
-worker.postMessage({ typ: "starten" });
+
+// ---------- Start: normal, oder im Firmennetz mit lokal abgelegten Laufzeitdateien
+const RT_NAMEN = ["python_stdlib.zip", "libopenblas-0.3.26.zip"];
+const istZip = (u) => u.length > 1 && u[0] === 0x50 && u[1] === 0x4b;
+async function zipErreichbar(pfad) {
+  try { const r = await fetch(pfad + "?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) return false;
+    if ((r.headers.get("content-type") || "").includes("text/html")) return false;
+    return istZip(new Uint8Array(await r.arrayBuffer()));
+  } catch { return false; }
+}
+async function rechenkernStarten() {
+  $("dl1").href = "py/" + RT_NAMEN[0]; $("dl2").href = "py/" + RT_NAMEN[1];
+  if (await zipErreichbar("py/" + RT_NAMEN[0])) { worker.postMessage({ typ: "starten" }); return; }
+  // Hintergrundabruf gesperrt: lokale Dateien nötig
+  const rt = await dbLesen("runtime");
+  if (rt && RT_NAMEN.every((n) => rt[n] && rt[n].byteLength)) {
+    $("motor-text").textContent = "Python wird aus den abgelegten Dateien geladen";
+    worker.postMessage({ typ: "starten", runtime: rt }, RT_NAMEN.map((n) => rt[n]));
+    return;
+  }
+  $("motor-text").innerHTML = `<span style="color:var(--warn)">Dieser Rechner braucht die Python Dateien einmal lokal.</span>`;
+  $("motor-balken").style.width = "0%";
+  $("laufzeit").classList.remove("versteckt");
+}
+$("rt-knopf").onclick = () => $("rt-datei").click();
+$("rt-datei").onchange = async (e) => {
+  const gewaehlt = {};
+  for (const f of e.target.files) {
+    const treffer = RT_NAMEN.find((n) => f.name === n || f.name.replace(/ \(\d+\)(?=\.)/, "") === n);
+    if (treffer) gewaehlt[treffer] = f;
+  }
+  const fehlen = RT_NAMEN.filter((n) => !gewaehlt[n]);
+  if (fehlen.length) { $("rt-status").innerHTML = `<span style="color:var(--fehler)">Es fehlt noch: ${fehlen.join(", ")}. Beide Dateien zusammen auswählen.</span>`; return; }
+  $("rt-status").textContent = "Dateien werden geprüft";
+  const rt = {};
+  for (const n of RT_NAMEN) {
+    const buf = await gewaehlt[n].arrayBuffer();
+    if (!istZip(new Uint8Array(buf))) { $("rt-status").innerHTML = `<span style="color:var(--fehler)">${n} ist keine gültige ZIP (vielleicht die Hinweisseite des Filters statt der Datei).</span>`; return; }
+    rt[n] = buf;
+  }
+  await dbSchreiben("runtime", rt);
+  $("laufzeit").classList.add("versteckt");
+  $("rt-status").textContent = "";
+  $("motor-text").textContent = "Python wird aus den abgelegten Dateien geladen";
+  worker.postMessage({ typ: "starten", runtime: rt }, RT_NAMEN.map((n) => rt[n]));
+};
+rechenkernStarten();
 
 // ---------- Bibliothek
 async function bibliothekNehmen(f) {
