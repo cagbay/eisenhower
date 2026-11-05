@@ -35,18 +35,100 @@
       "accept": {
         "application/x-step": [
           ".ifc"
-        ],
+        ]
+      },
+      "icons": [
+        {
+          "src": "icons/file-ifc-256.png",
+          "sizes": "256x256",
+          "type": "image/png"
+        },
+        {
+          "src": "icons/file-ifc-64.png",
+          "sizes": "64x64",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "action": "./",
+      "accept": {
         "application/zip": [
           ".ifczip"
-        ],
+        ]
+      },
+      "icons": [
+        {
+          "src": "icons/file-ifczip-256.png",
+          "sizes": "256x256",
+          "type": "image/png"
+        },
+        {
+          "src": "icons/file-ifczip-64.png",
+          "sizes": "64x64",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "action": "./",
+      "accept": {
         "image/vnd.dxf": [
           ".dxf"
-        ],
+        ]
+      },
+      "icons": [
+        {
+          "src": "icons/file-dxf-256.png",
+          "sizes": "256x256",
+          "type": "image/png"
+        },
+        {
+          "src": "icons/file-dxf-64.png",
+          "sizes": "64x64",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "action": "./",
+      "accept": {
         "application/octet-stream": [
-          ".laz",
+          ".laz"
+        ]
+      },
+      "icons": [
+        {
+          "src": "icons/file-laz-256.png",
+          "sizes": "256x256",
+          "type": "image/png"
+        },
+        {
+          "src": "icons/file-laz-64.png",
+          "sizes": "64x64",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "action": "./",
+      "accept": {
+        "application/vnd.las": [
           ".las"
         ]
-      }
+      },
+      "icons": [
+        {
+          "src": "icons/file-las-256.png",
+          "sizes": "256x256",
+          "type": "image/png"
+        },
+        {
+          "src": "icons/file-las-64.png",
+          "sizes": "64x64",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
