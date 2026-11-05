@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- PL-Bestandsmodell Generator v1.3. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
+<!-- PL-Bestandsmodell Generator v1.4. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -63,7 +63,7 @@ header h1 { font-size: 22px; margin: 0; }
 .reihe { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
 @media (max-width: 560px) { .reihe { grid-template-columns: 1fr; } }
 label.feld { display: block; font-size: 13px; color: var(--leise); }
-label.feld input, input.pw { display: block; width: 100%; margin-top: 3px; padding: 9px 11px; font: inherit; color: var(--text);
+label.feld input, label.feld select, input.pw { display: block; width: 100%; margin-top: 3px; padding: 9px 11px; font: inherit; color: var(--text);
   background: var(--bg); border: 1px solid var(--linie); border-radius: 8px; }
 .schalter { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; cursor: pointer; }
 .schalter input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--akzent); flex: none; }
@@ -83,6 +83,9 @@ pre.log { font: 12px/1.45 var(--mono); background: var(--bg); border: 1px solid 
 img.plan { max-width: 100%; border-radius: 8px; border: 1px solid var(--linie); margin-top: 12px; background: #fff; }
 #laufzeit a.ergebnis-link { display: inline-flex; align-items: center; text-decoration: none; color: var(--akzent);
   background: var(--akzent-hell); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
+.modellname { font: 13px var(--mono); overflow-wrap: anywhere; margin-top: 10px; padding: 8px 12px; border-radius: 8px;
+  background: var(--akzent-hell); color: var(--akzent); }
+.modellname.fehler { background: var(--fehler-hell); color: var(--fehler); }
 .versteckt { display: none !important; }
 .gesperrt { opacity: .5; pointer-events: none; }
 footer { color: var(--leise); font-size: 12px; text-align: center; margin-top: 24px; }
@@ -93,7 +96,7 @@ footer a { color: inherit; }
 <main>
   <header>
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--akzent)" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/></svg>
-    <h1>PL-Bestandsmodell</h1><span class="tag">v1.3</span>
+    <h1>PL-Bestandsmodell</h1><span class="tag">v1.4</span>
   </header>
   <p class="unter">Shapefile Export und DXF hineinziehen, das 3D Bestandsmodell (IFC4, LV95, LN02) entsteht hier im Browser. Die Projektdaten verlassen das Gerät nicht.</p>
 
@@ -153,9 +156,17 @@ footer a { color: inherit; }
   <section class="karte" id="k-optionen">
     <h2><span class="nr">4</span> Einstellungen</h2>
     <div class="reihe">
-      <label class="feld">Projekt <input id="projekt" placeholder="z.B. 15075 Kaeferholz"></label>
+      <label class="feld">Baunummer <input id="baunr" inputmode="numeric" autocomplete="off" placeholder="z.B. 15033"></label>
+      <label class="feld">Kurzname <input id="projekt" autocomplete="off" placeholder="z.B. Kaeferholz"></label>
+      <label class="feld">Phase <select id="phase">
+        <option value="31" selected>31 Vorprojekt</option><option value="32">32 Bauprojekt</option>
+        <option value="41">41 Ausschreibung</option><option value="51">51 Ausführungsprojekt</option>
+        <option value="52">52 Ausführung</option></select></label>
+      <label class="feld">Los <input id="los" inputmode="numeric" autocomplete="off" placeholder="leer = L00"></label>
       <label class="feld">Ort <input id="ort" placeholder="z.B. Kaeferholzstrasse"></label>
     </div>
+    <div class="modellname" id="modellname" aria-live="polite">Modellname: Baunummer fehlt</div>
+    <div class="leise" style="margin-top:4px">Namenskonvention Stadt Zürich. Der Kurzname kommt nur in IfcProject, IfcSite und das Protokoll, nicht in den Dateinamen.</div>
     <label class="schalter"><input type="checkbox" id="gelaende" checked>
       <span>Geländemodell swissALTI3D automatisch holen<small id="gelaende-text">0.5 m Raster direkt von swisstopo, Perimeter plus 50 m. Für Überdeckung und Terrain.</small></span></label>
     <label class="schalter"><input type="checkbox" id="messpunkte" checked>
@@ -184,7 +195,7 @@ footer a { color: inherit; }
       <pre class="log" id="log"></pre></details>
   </section>
 
-  <footer>PL-Bestandsmodell v1.3 vom 04.11.2026 · Skripte shp2ifc Stand 16.10.2026 · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
+  <footer>PL-Bestandsmodell v1.4 vom 05.11.2026 · Skripte shp2ifc Stand 16.10.2026 · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
     Python im Browser: Pyodide (MPL 2.0), IfcOpenShell (LGPL 3.0), numpy, scipy, shapely, ezdxf, pyshp, tifffile · Geländemodell © swisstopo
     · <a href="#" id="abmelden">Abmelden</a></footer>
 </main>
@@ -366,7 +377,7 @@ $("bib-zurueck").onclick = async () => {
 // ---------- Projektvorlagen (aus dem verschlüsselten Skriptpaket, projekte.json)
 let projekte = {}, vorlageGesetzt = "", vorlageAktiv = null;
 function vorlage() {
-  const nr = ($("projekt").value.match(/\d{5}/) || [""])[0];
+  const nr = $("baunr").value.trim();
   const v = projekte[nr];
   if (v && (!$("weitere").value || $("weitere").value === vorlageGesetzt)) {
     $("weitere").value = v.weitere || ""; vorlageGesetzt = $("weitere").value;
@@ -380,7 +391,31 @@ function vorlage() {
   $("vorlage-dateien-zeile").classList.toggle("versteckt", !d.length);
   $("vorlage-dateien-text").textContent = d.map((x) => x.split("/").pop()).join(", ") + (v && v.hinweis ? `. ${v.hinweis}` : "");
 }
-$("projekt").addEventListener("input", vorlage);
+// ---------- Modellname nach Namenskonvention (gleiche Regel wie namen.py; gebildet wird er in bestand_lauf.py)
+function heuteZuerich() {
+  const t = Object.fromEntries(new Intl.DateTimeFormat("de-CH", { timeZone: "Europe/Zurich", year: "2-digit", month: "2-digit", day: "2-digit" })
+    .formatToParts(new Date()).map((x) => [x.type, x.value]));
+  return t.year + t.month + t.day;
+}
+function modellname() {
+  const b = $("baunr").value.trim(), l = $("los").value.trim();
+  if (!/^\d{4,6}$/.test(b)) throw "Baunummer 5-stellig, z.B. 15033";
+  const m = l.match(/\d+/);
+  if (l && !m) throw "Los als Zahl, z.B. 2 (leer = L00)";
+  const los = "L" + String(m ? parseInt(m[0], 10) : 0).padStart(2, "0");
+  return `${b}_WKL-WASS_${$("phase").value}_B_WVZ_${los}-V00_${heuteZuerich()}.ifc`;
+}
+let nameFehler = "Baunummer 5-stellig, z.B. 15033";
+function zeigeName() {
+  try { $("modellname").textContent = "Modellname: " + modellname(); $("modellname").className = "modellname"; nameFehler = ""; }
+  catch (t) { $("modellname").textContent = String(t); $("modellname").className = "modellname fehler"; nameFehler = String(t); }
+  zustand();
+}
+const auto = { baunr: "", projekt: "" };
+function vorschlag(id, wert) { if (!$(id).value || $(id).value === auto[id]) { $(id).value = wert; auto[id] = wert; } }
+$("baunr").addEventListener("input", () => { vorlage(); zeigeName(); });
+$("los").addEventListener("input", zeigeName);
+$("phase").addEventListener("change", zeigeName);
 $("bib-datei").onchange = (e) => { if (e.target.files[0]) bibliothekNehmen(e.target.files[0]); };
 
 // ---------- Projektdateien: Ziehen, auch ganze Ordner
@@ -416,10 +451,13 @@ async function aufnehmen(liste) {
     dateien = dateien.filter((d) => d.name !== f.name);
     dateien.push({ name: f.name, daten: await f.arrayBuffer(), groesse: f.size });
   }
-  if (!$("projekt").value) {
-    const shp = dateien.find((d) => /\.zip$/i.test(d.name));
-    const m = shp && shp.name.match(/(?:^|_)(\d{5})(?:_|\b)/);
-    if (m) { $("projekt").value = m[1]; vorlage(); }
+  const zips = dateien.filter((d) => /\.zip$/i.test(d.name));
+  const shp = zips.find((d) => /shape|shp|export|leitung/i.test(d.name)) || zips[0];
+  if (shp) {
+    const m = shp.name.match(/(?:^|\D)(\d{5})(?!\d)/);
+    if (m) vorschlag("baunr", m[1]);
+    vorschlag("projekt", shp.name.replace(/\.zip$/i, ""));
+    vorlage(); zeigeName();
   }
   zeigeListe(); if (entsperrt) pruefen(); zustand();
 }
@@ -468,18 +506,21 @@ function zeigePruefung() {
 }
 
 function zustand() {
-  const ok = entsperrt && pruefung && pruefung.shp && !rechnet;
+  const ok = entsperrt && pruefung && pruefung.shp && !rechnet && !nameFehler;
   $("start").disabled = !ok;
   $("start-hinweis").textContent = rechnet ? "Rechnet" : !motor ? "Rechenkern lädt noch" : !entsperrt ? "Zuerst entsperren"
     : !dateien.length ? "Zuerst Projektdateien hineinziehen" : !pruefung ? "Eingangsprüfung läuft" : !pruefung.shp ? "Shapefile Export fehlt"
+    : nameFehler ? nameFehler
     : ($("formstuecke").checked && !bibliothek) ? "Ohne Bibliothek entstehen keine Formstücke" : "";
   ["k-bib", "k-projekt", "k-optionen"].forEach((id) => $(id).classList.toggle("gesperrt", !entsperrt));
 }
 $("formstuecke").onchange = zustand;
 zustand();
+zeigeName();
 
 // ---------- Rechnen
 $("start").onclick = () => {
+  zeigeName(); if (nameFehler) { $("baunr").focus(); return; }
   if (pruefung && !pruefung.dxf.length && !confirm("Kein Werkleitungs DXF. Ohne DXF fehlen Getriebeseite der Klappen, Koten nur im DXF und vertikale Bögen. Trotzdem weiter?")) return;
   rechnet = true; zustand();
   $("k-lauf").classList.remove("versteckt"); $("ergebnis").innerHTML = ""; $("plan").classList.add("versteckt");
@@ -487,18 +528,18 @@ $("start").onclick = () => {
   $("lauf-status").innerHTML = `<div class="meldung info">Das Modell wird erzeugt. Je nach Projekt dauert das eine halbe bis einige Minuten.</div><div class="meldung info versteckt" id="gelaende-status"></div>`;
   const projekt = $("projekt").value.trim() || "Projekt";
   worker.postMessage({ typ: "rechnen", dateien: dateien.map((d) => ({ name: d.name, daten: d.daten.slice(0) })),
-    optionen: { projekt, ort: $("ort").value.trim() || projekt, messpunkte: $("messpunkte").checked, formstuecke: $("formstuecke").checked,
+    optionen: { projekt, baunr: $("baunr").value.trim(), phase: $("phase").value, los: $("los").value.trim(), datum: heuteZuerich(), ort: $("ort").value.trim() || projekt, messpunkte: $("messpunkte").checked, formstuecke: $("formstuecke").checked,
       gelaende: $("gelaende").checked && !pruefung.dtm, bbox: pruefung.bbox,
       geom: !!(pruefung.dtm && /\.ifc$/i.test(pruefung.dtm)), weitere: $("weitere").value.trim(),
       vorlageDateien: vorlageAktiv && $("vorlage-dateien").checked ? (vorlageAktiv.dateien || []) : [] } });
   $("k-lauf").scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
-const TYP = { ifc: "application/octet-stream", png: "image/png", txt: "text/plain;charset=utf-8",
+const TYP = { ifc: "application/octet-stream", zip: "application/zip", png: "image/png", txt: "text/plain;charset=utf-8",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
 function fertig(m) {
   rechnet = false; zustand();
-  const prot = m.dateien.find((d) => d.name.startsWith("Protokoll_"));
+  const prot = m.dateien.find((d) => d.name.endsWith("_Protokoll.txt") || d.name.startsWith("Protokoll_"));
   const text = prot ? new TextDecoder().decode(prot.daten) : "";
   const gut = /alle Kriterien erfüllt/.test(text);
   const kopf = text.split("\n\n")[0];
@@ -508,15 +549,19 @@ function fertig(m) {
       : `<div class="meldung fehler">Kein Modell erzeugt (Rückgabe ${m.rc}). Siehe Protokoll.</div>`)
     + warnungen.map((w) => `<div class="meldung warn">${esc(w)}</div>`).join("");
   $("ergebnis").innerHTML = "";
-  const reihen = m.dateien.slice().sort((a, b) => b.name.endsWith(".ifc") - a.name.endsWith(".ifc"));
+  const rang = (d) => d.name.endsWith(".ifc") ? 0 : d.zip ? 1 : 2;
+  const reihen = m.dateien.slice().sort((a, b) => rang(a) - rang(b) || a.name.localeCompare(b.name));
   for (const d of reihen) {
     const ext = d.name.split(".").pop().toLowerCase();
     const url = URL.createObjectURL(new Blob([d.daten], { type: TYP[ext] || "application/octet-stream" }));
-    const a = document.createElement("a"); a.href = url; a.download = d.name;
-    a.textContent = ext === "ifc" ? `IFC herunterladen (${(d.daten.byteLength / 1e6).toFixed(1)} MB)` : d.name.replace(/_\d{6}\.\w+$/, "").replace(/_/g, " ") + " (" + ext + ")";
+    const a = document.createElement("a"); a.href = url; a.download = d.name; a.title = d.name;
+    const teil = d.name.replace(/\.\w+$/, "").match(/_\d{6}(?:_\d+)?_(.+)$/);    // Zusatz nach dem Datum
+    a.textContent = ext === "ifc" ? `IFC herunterladen (${(d.daten.byteLength / 1e6).toFixed(1)} MB)`
+      : d.zip ? `Alles als ZIP (${(d.daten.byteLength / 1e6).toFixed(1)} MB)`
+      : (teil ? teil[1] : d.name.replace(/_\d{6}\.\w+$/, "")).replace(/_/g, " ") + " (" + ext + ")";
     if (ext === "ifc") a.className = "ifc";
     $("ergebnis").appendChild(a);
-    if (ext === "png" && d.name.startsWith("Hoehenherkunft")) { $("plan").src = url; $("plan").classList.remove("versteckt"); }
+    if (ext === "png" && (d.name.endsWith("_Kontrollplan.png") || d.name.startsWith("Hoehenherkunft"))) { $("plan").src = url; $("plan").classList.remove("versteckt"); }
   }
   if (!gut) $("log-box").open = true;
 }

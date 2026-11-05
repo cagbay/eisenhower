@@ -162,7 +162,7 @@ def _run(cmd, capture_output=False, text=False, **kw):
     return types.SimpleNamespace(returncode=1, stdout="", stderr="im Browser nicht verfügbar: " + " ".join(map(str, cmd)))
 subprocess.run = _run
 
-EIGENE = ("bestand_lauf", "shp2ifc", "formstuecke", "log300", "gem001", "ifc106", "tin", "dtm_holen")
+EIGENE = ("bestand_lauf", "namen", "shp2ifc", "formstuecke", "log300", "gem001", "ifc106", "tin", "dtm_holen")
 def frisch():
     for m in EIGENE: sys.modules.pop(m, None)
     import bestand_lauf
@@ -316,7 +316,10 @@ async function rechnen(dateien, o) {
     if (!py.FS.analyzePath("/projekt/" + name).exists) py.FS.writeFile("/projekt/" + name, py.FS.readFile("/app/bestand/" + v));
   }
   if (o.geom) await geomLaden();
+  // Modellname nach Namenskonvention: Baunummer, Phase, Los aus dem Formular, Datum des Browsers (Europe/Zurich);
+  // gebildet wird er in bestand_lauf.py mit namen.py, gleiche Regel wie die Vorschau in index.html
   py.globals.set("_argv", ["bestand_lauf.py", "/projekt", "--projekt", o.projekt, "--ort", o.ort || o.projekt,
+    "--baunr", o.baunr, "--phase", String(o.phase), "--los", o.los || "", "--datum", o.datum,
     "--messpunkte", o.messpunkte ? "ja" : "nein", "--formstuecke", o.formstuecke && bibliothekGeladen ? "ja" : "nein",
     ...(bibliothekGeladen ? ["--bibliothek", "/app/bibliothek"] : []),
     ...(o.weitere ? ["--weitere", o.weitere] : [])]);
@@ -338,6 +341,19 @@ d[-1] if d else ""
   if (ordner) for (const n of py.FS.readdir(ordner)) {
     if (n === "." || n === "..") continue;
     aus.push({ name: n, daten: py.FS.readFile(ordner + n).buffer });
+  }
+  // alles zusammen als ZIP, Name wie der Ausgabeordner (= IFC ohne Endung, zweiter Lauf am selben Tag _2, _3)
+  if (aus.some((d) => d.name.endsWith(".ifc"))) {
+    py.globals.set("_ordner", ordner);
+    const zipName = py.runPython(`
+import zipfile, os
+_n = os.path.basename(_ordner.rstrip("/")) + ".zip"
+with zipfile.ZipFile("/tmp/" + _n, "w", zipfile.ZIP_DEFLATED) as _z:
+    for _f in sorted(os.listdir(_ordner)): _z.write(os.path.join(_ordner, _f), _f)
+_n
+`);
+    aus.push({ name: zipName, daten: py.FS.readFile("/tmp/" + zipName).buffer, zip: true });
+    py.FS.unlink("/tmp/" + zipName);
   }
   return { rc, ordner: ordner.split("/").filter(Boolean).pop() || "", dateien: aus };
 }
