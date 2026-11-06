@@ -33,6 +33,26 @@
     {
       "action": "./",
       "accept": {
+        "application/x-ifcv": [
+          ".ifcv"
+        ]
+      },
+      "icons": [
+        {
+          "src": "icons/file-ifcv-256.png",
+          "sizes": "256x256",
+          "type": "image/png"
+        },
+        {
+          "src": "icons/file-ifcv-64.png",
+          "sizes": "64x64",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "action": "./",
+      "accept": {
         "application/x-step": [
           ".ifc"
         ]
