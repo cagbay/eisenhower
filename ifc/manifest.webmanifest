@@ -149,6 +149,26 @@
           "type": "image/png"
         }
       ]
+    },
+    {
+      "action": "./",
+      "accept": {
+        "application/geo+json": [
+          ".geojson"
+        ]
+      },
+      "icons": [
+        {
+          "src": "icons/file-geojson-256.png",
+          "sizes": "256x256",
+          "type": "image/png"
+        },
+        {
+          "src": "icons/file-geojson-64.png",
+          "sizes": "64x64",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
