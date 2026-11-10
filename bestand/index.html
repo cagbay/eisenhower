@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- PL-Bestandsmodell Generator v1.4. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
+<!-- PL-Bestandsmodell Generator v1.5. (c) 2026 Caglar Baysal, alle Rechte vorbehalten. Skripte verschluesselt. -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -96,14 +96,17 @@ footer a { color: inherit; }
 <main>
   <header>
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--akzent)" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/></svg>
-    <h1>PL-Bestandsmodell</h1><span class="tag">v1.4</span>
+    <h1>PL-Bestandsmodell</h1><span class="tag">v1.5</span>
   </header>
-  <p class="unter">Shapefile Export und DXF hineinziehen, das 3D Bestandsmodell (IFC4, LV95, LN02) entsteht hier im Browser. Die Projektdaten verlassen das Gerät nicht.</p>
+  <p class="unter">Shapefile Export und DXF hineinziehen, das 3D Bestandsmodell (<span id="ifc-text">IFC 4.3</span>, LV95, LN02) entsteht hier im Browser. Die Projektdaten verlassen das Gerät nicht.</p>
 
   <section class="karte" id="k-motor">
     <h2><span class="nr">1</span> Rechenkern</h2>
     <div id="motor-text" class="leise">Wird vorbereitet</div>
     <div class="balken"><div id="motor-balken"></div></div>
+    <label class="feld versteckt" id="stand-zeile" style="margin-top:12px">Skriptstand
+      <select id="stand"></select></label>
+    <div class="leise versteckt" id="stand-text" style="margin-top:4px"></div>
     <form id="login" class="versteckt" autocomplete="on" style="margin-top:14px">
       <div class="leise" style="margin-bottom:6px">Die WVZ Skripte sind geschützt. Passwort wie beim IFC Viewer.</div>
       <input type="text" name="username" value="IFC Viewer" autocomplete="username" class="versteckt" aria-hidden="true">
@@ -169,10 +172,24 @@ footer a { color: inherit; }
     <div class="leise" style="margin-top:4px">Namenskonvention Stadt Zürich. Der Kurzname kommt nur in IfcProject, IfcSite und das Protokoll, nicht in den Dateinamen.</div>
     <label class="schalter"><input type="checkbox" id="gelaende" checked>
       <span>Geländemodell swissALTI3D automatisch holen<small id="gelaende-text">0.5 m Raster direkt von swisstopo, Perimeter plus 50 m. Für Überdeckung und Terrain.</small></span></label>
+    <div id="optionen" class="versteckt">
+      <div class="reihe" style="margin-top:8px">
+        <label class="feld">Farben <select id="farben">
+          <option value="taz" selected>TAZ Farbkonzept</option><option value="wvz">WVZ Farben</option></select></label>
+        <label class="feld" id="taz-zeile">TAZ Stand <select id="taz_stand">
+          <option value="Bestand" selected>Bestand</option><option value="Projektiert">Projektiert</option></select></label>
+        <label class="feld">IFC Version <select id="schema">
+          <option value="IFC4X3_ADD2" selected>IFC 4.3</option><option value="IFC4">IFC 4</option></select></label>
+        <label class="feld">Armaturen <select id="armaturen">
+          <option value="bibliothek" selected>aus der Bauteilbibliothek</option><option value="log300">vereinfacht (LOG 300)</option></select></label>
+      </div>
+      <label class="schalter"><input type="checkbox" id="hoehenausgleich" checked>
+        <span>Höhen ausgleichen<small>Dicht gemessene Koten mit wenigen cm Differenz auf eine Ebene legen (Toleranz 8 cm).</small></span></label>
+    </div>
     <label class="schalter"><input type="checkbox" id="messpunkte" checked>
       <span>Messpunkte ins IFC<small>Rote Kugeln mit Kote, zur Kontrolle. Für die Abgabe meist aus.</small></span></label>
     <label class="schalter"><input type="checkbox" id="formstuecke" checked>
-      <span>Formstücke aus der WVZ Bauteilbibliothek<small>T Stücke, Bögen, Reduktionen, Kupplungen. Braucht Bibliothek und Werkleitungs DXF.</small></span></label>
+      <span>Formstücke aus der WVZ Bauteilbibliothek<small>T Stücke, Bögen, Reduktionen, Kupplungen. Braucht Bibliothek und Werkleitungs DXF.<span id="fs-hinweis" class="versteckt"> Mit Armaturen aus der Bauteilbibliothek werden die Formstücke immer gesetzt.</span></small></span></label>
     <details id="erweitert" style="margin-top:6px"><summary class="leise" style="cursor:pointer">Projekteinstellungen <span id="vorlage-hinweis"></span></summary>
       <label class="feld" style="margin-top:8px">Weitere Optionen für shp2ifc
         <input id="weitere" placeholder="z.B. --koten-verwerfen 2820,1656600 --kreuzung-unter 65812,65813" spellcheck="false" autocomplete="off" style="font-family:var(--mono);font-size:13px"></label>
@@ -195,7 +212,7 @@ footer a { color: inherit; }
       <pre class="log" id="log"></pre></details>
   </section>
 
-  <footer>PL-Bestandsmodell v1.4 vom 05.11.2026 · Skripte shp2ifc Stand 16.10.2026 · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
+  <footer>PL-Bestandsmodell v1.5 vom 10.11.2026 · Skripte shp2ifc Stand <span id="fuss-stand">10.11.2026 (neuester)</span> · © 2026 Caglar Baysal, alle Rechte vorbehalten<br>
     Python im Browser: Pyodide (MPL 2.0), IfcOpenShell (LGPL 3.0), numpy, scipy, shapely, ezdxf, pyshp, tifffile · Geländemodell © swisstopo
     · <a href="#" id="abmelden">Abmelden</a></footer>
 </main>
@@ -207,7 +224,9 @@ let motor = false, entsperrt = false, bibliothek = 0, rechnet = false, bibName =
 let dateien = [];       // {name, daten: ArrayBuffer, groesse}
 let pruefung = null;
 const SCHLUESSEL = ["plbg-key", "ifcv-key"];   // eigener und der des IFC Viewers (gleiches Passwort, gleicher Salt)
-let info = null;        // app/skripte.json: salt, iv, iter
+let info = null;        // app/skripte_<Stand>.json: salt, iv, iter
+let staende = [], stand = "", standGeladen = "", standLaedt = false;   // Skriptstände aus app/staende.json
+const SCHEMA_TEXT = { IFC4X3_ADD2: "IFC 4.3", IFC4: "IFC 4" };
 
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 
@@ -241,14 +260,47 @@ const u2b = (u) => { let s = ""; for (let i = 0; i < u.length; i += 32768) s += 
 // ---------- Anmeldung
 let versuchterSchluessel = null, gemerkt = false;
 async function anmelden() {
-  try { info = await (await fetch("app/skripte.json", { cache: "no-cache" })).json(); }
+  try {
+    staende = await (await fetch("app/staende.json", { cache: "no-cache" })).json();
+    stand = (staende.find((s) => s.neuester) || staende[0]).id;      // vorgewählt immer der neueste
+    $("stand").innerHTML = "";
+    for (const s of staende) { const o = document.createElement("option"); o.value = s.id; o.textContent = s.anzeige; $("stand").appendChild(o); }
+    $("stand").value = stand; $("stand-zeile").classList.remove("versteckt");
+    standAnzeigen();
+    info = await (await fetch(`app/skripte_${stand}.json`, { cache: "no-cache" })).json();
+  }
   catch { $("motor-text").textContent = "Die Skripte konnten nicht geladen werden."; return; }
   for (const k of SCHLUESSEL) {
     const s = lsLesen(k);
-    if (s && s.salt === info.salt && s.key) { versuchterSchluessel = s.key; gemerkt = true; worker.postMessage({ typ: "schluessel", schluessel: s.key }); return; }
+    if (s && s.salt === info.salt && s.key) { versuchterSchluessel = s.key; gemerkt = true; worker.postMessage({ typ: "schluessel", schluessel: s.key, stand }); return; }
   }
   zeigeLogin();
 }
+// ---------- Skriptstand: nur die Felder zeigen, die der Stand kennt
+const standInfo = () => staende.find((s) => s.id === stand) || { optionen: [], anzeige: stand };
+function standAnzeigen() {
+  const s = standInfo(), neu = (s.optionen || []).length > 0;
+  $("optionen").classList.toggle("versteckt", !neu);
+  $("stand-text").textContent = s.beschreibung || ""; $("stand-text").classList.toggle("versteckt", !s.beschreibung);
+  $("fuss-stand").textContent = s.anzeige;
+  optionenAnzeigen();
+}
+function optionenAnzeigen() {
+  const neu = (standInfo().optionen || []).length > 0;
+  $("taz-zeile").classList.toggle("versteckt", $("farben").value !== "taz");
+  $("ifc-text").textContent = neu ? SCHEMA_TEXT[$("schema").value] : "IFC 4";
+  $("fs-hinweis").classList.toggle("versteckt", !neu || $("armaturen").value !== "bibliothek");
+  if (typeof zustand === "function") zustand();
+}
+["farben", "schema", "armaturen"].forEach((id) => $(id).addEventListener("change", optionenAnzeigen));
+$("stand").addEventListener("change", () => {
+  stand = $("stand").value; standAnzeigen();
+  if (!entsperrt) return;                  // vor dem Entsperren: geladen wird der Stand beim Entsperren
+  if (standLaedt) return;                  // läuft schon ein Wechsel, lädt die Antwort darauf den neuen Stand nach
+  standLaedt = true; zustand();
+  $("motor-text").textContent = `Skriptstand ${standInfo().anzeige} wird geladen`;
+  worker.postMessage({ typ: "stand", stand });
+});
 function zeigeLogin(fehler) {
   $("login").classList.remove("versteckt");
   $("motor-text").innerHTML = `<span style="color:var(--gut)">Rechenkern bereit.</span> Noch gesperrt.`;
@@ -263,7 +315,7 @@ $("login").addEventListener("submit", async (e) => {
   const basis = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
   const roh = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: b2u(info.salt), iterations: info.iter }, basis, 256));
   versuchterSchluessel = u2b(roh); gemerkt = false;
-  worker.postMessage({ typ: "schluessel", schluessel: versuchterSchluessel });
+  worker.postMessage({ typ: "schluessel", schluessel: versuchterSchluessel, stand });
 });
 $("abmelden").onclick = (e) => { e.preventDefault(); lsLoeschen("plbg-key"); location.reload(); };
 
@@ -280,10 +332,19 @@ worker.onmessage = async (ev) => {
     entsperrt = true; $("login").classList.add("versteckt");
     projekte = m.projekte || {};
     if (!gemerkt && $("merken").checked) lsSchreiben("plbg-key", { salt: info.salt, key: versuchterSchluessel });
-    $("motor-text").innerHTML = `<span style="color:var(--gut)">Bereit</span> <span class="leise">(${motorZeit} s, beim nächsten Mal schneller. Skripte ${esc(m.stand || "")})</span>`;
+    standGeladen = m.stand;
+    $("motor-text").innerHTML = `<span style="color:var(--gut)">Bereit</span> <span class="leise">(${motorZeit} s, beim nächsten Mal schneller. Skripte ${esc(standInfo().anzeige)})</span>`;
     const g = await dbLesen("bibliothek");
     if (g) { bibName = g.name; $("bib-status").textContent = "Eigene Bibliothek wird geladen"; worker.postMessage({ typ: "bibliothek", daten: g.daten }); }
     else worker.postMessage({ typ: "bibliothek_hinterlegt" });
+    vorlage();
+    if (dateien.length) pruefen();
+    zustand();
+  }
+  else if (m.typ === "stand") {           // anderer Skriptstand geladen
+    standGeladen = m.stand; standLaedt = false; projekte = m.projekte || {};
+    $("motor-text").innerHTML = `<span style="color:var(--gut)">Bereit</span> <span class="leise">(Skripte ${esc(standInfo().anzeige)})</span>`;
+    if (stand !== standGeladen) { standLaedt = true; worker.postMessage({ typ: "stand", stand }); }   // inzwischen erneut umgeschaltet
     vorlage();
     if (dateien.length) pruefen();
     zustand();
@@ -304,7 +365,7 @@ worker.onmessage = async (ev) => {
   else if (m.typ === "log") { const l = $("log"); l.textContent += m.text + "\n"; l.scrollTop = l.scrollHeight; }
   else if (m.typ === "fertig") fertig(m);
   else if (m.typ === "fehler") {
-    rechnet = false; zustand();
+    rechnet = false; standLaedt = false; zustand();
     $("k-lauf").classList.remove("versteckt");
     $("lauf-status").innerHTML = motor ? `<div class="meldung fehler">Fehler im Rechenkern. Details im Protokoll.</div>`
       : `<div class="meldung fehler">Der Rechenkern konnte nicht starten. Das Protokoll zeigt, welche Datei nicht geladen werden konnte.</div>`;
@@ -475,6 +536,7 @@ function zeigeListe() {
 }
 
 function pruefen() {
+  if (standLaedt) return;                  // nach dem Laden des Skriptstands wird ohnehin geprüft
   pruefung = null; zustand();
   $("pruefung").innerHTML = `<div class="meldung info">Eingangsprüfung läuft</div>`;
   worker.postMessage({ typ: "pruefen", dateien: dateien.map((d) => ({ name: d.name, daten: d.daten.slice(0) })) });
@@ -506,13 +568,17 @@ function zeigePruefung() {
 }
 
 function zustand() {
-  const ok = entsperrt && pruefung && pruefung.shp && !rechnet && !nameFehler;
+  const bibFehlt = (standInfo().optionen || []).includes("armaturen") && $("armaturen").value === "bibliothek" && !bibliothek;
+  const ok = entsperrt && pruefung && pruefung.shp && !rechnet && !nameFehler && !standLaedt && stand === standGeladen && !bibFehlt;
   $("start").disabled = !ok;
   $("start-hinweis").textContent = rechnet ? "Rechnet" : !motor ? "Rechenkern lädt noch" : !entsperrt ? "Zuerst entsperren"
+    : (standLaedt || stand !== standGeladen) ? "Skriptstand wird geladen"
     : !dateien.length ? "Zuerst Projektdateien hineinziehen" : !pruefung ? "Eingangsprüfung läuft" : !pruefung.shp ? "Shapefile Export fehlt"
     : nameFehler ? nameFehler
+    : bibFehlt ? "Armaturen aus der Bauteilbibliothek brauchen die Bibliothek (oder Armaturen vereinfacht wählen)"
     : ($("formstuecke").checked && !bibliothek) ? "Ohne Bibliothek entstehen keine Formstücke" : "";
   ["k-bib", "k-projekt", "k-optionen"].forEach((id) => $(id).classList.toggle("gesperrt", !entsperrt));
+  $("stand").disabled = rechnet;
 }
 $("formstuecke").onchange = zustand;
 zustand();
@@ -528,12 +594,25 @@ $("start").onclick = () => {
   $("lauf-status").innerHTML = `<div class="meldung info">Das Modell wird erzeugt. Je nach Projekt dauert das eine halbe bis einige Minuten.</div><div class="meldung info versteckt" id="gelaende-status"></div>`;
   const projekt = $("projekt").value.trim() || "Projekt";
   worker.postMessage({ typ: "rechnen", dateien: dateien.map((d) => ({ name: d.name, daten: d.daten.slice(0) })),
-    optionen: { projekt, baunr: $("baunr").value.trim(), phase: $("phase").value, los: $("los").value.trim(), datum: heuteZuerich(), ort: $("ort").value.trim() || projekt, messpunkte: $("messpunkte").checked, formstuecke: $("formstuecke").checked,
+    optionen: { stand, neu: neueOptionen(), projekt, baunr: $("baunr").value.trim(), phase: $("phase").value, los: $("los").value.trim(), datum: heuteZuerich(), ort: $("ort").value.trim() || projekt, messpunkte: $("messpunkte").checked, formstuecke: $("formstuecke").checked,
       gelaende: $("gelaende").checked && !pruefung.dtm, bbox: pruefung.bbox,
       geom: !!(pruefung.dtm && /\.ifc$/i.test(pruefung.dtm)), weitere: $("weitere").value.trim(),
       vorlageDateien: vorlageAktiv && $("vorlage-dateien").checked ? (vorlageAktiv.dateien || []) : [] } });
   $("k-lauf").scrollIntoView({ behavior: "smooth", block: "start" });
 };
+
+// Optionen ab Stand 10.11.2026; für Stände ohne diese Optionen nichts (Aufruf wie bisher)
+function neueOptionen() {
+  const kennt = standInfo().optionen || [];
+  if (!kennt.length) return {};
+  const o = {};
+  if (kennt.includes("farben")) o.farben = $("farben").value;
+  if (kennt.includes("taz_stand") && $("farben").value === "taz") o.taz_stand = $("taz_stand").value;
+  if (kennt.includes("schema")) o.schema = $("schema").value;
+  if (kennt.includes("armaturen")) o.armaturen = $("armaturen").value;
+  if (kennt.includes("hoehenausgleich")) o.hoehenausgleich = $("hoehenausgleich").checked;
+  return o;
+}
 
 const TYP = { ifc: "application/octet-stream", zip: "application/zip", png: "image/png", txt: "text/plain;charset=utf-8",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };

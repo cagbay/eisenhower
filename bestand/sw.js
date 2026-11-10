@@ -1,6 +1,8 @@
 // Offline Cache des PL-Bestandsmodell Generators. Eigener Name (pl-bestand-...), damit Plattform und IFC Viewer
 // ihre Caches behalten und dieser Cache von ihnen nicht gelöscht wird. Version ändert mit jedem Build.
-const CACHE = "pl-bestand-v1.4-261105";
+// Ab v1.5 je Skriptstand ein Paket app/skripte_<ID>.enc: jedes hat eine eigene Adresse und liegt darum eigen im Cache,
+// nach einmaligem Laden lässt sich offline zwischen den Ständen umschalten.
+const CACHE = "pl-bestand-v1.5-261110";
 const FEST = /\/(py|wheels)\//;   // Python Laufzeit und Pakete: unveränderlich, sofort aus dem Cache
 
 self.addEventListener("install", () => self.skipWaiting());
@@ -16,7 +18,9 @@ self.addEventListener("fetch", (e) => {
   if (url.origin !== location.origin || !url.pathname.includes("/bestand/")) return;   // swisstopo und Rest direkt
   e.respondWith(caches.open(CACHE).then(async (c) => {
     if (FEST.test(url.pathname)) {
-      const hit = await c.match(req);
+      // ignoreSearch: die Startprüfung in index.html fragt python_stdlib.zip mit ?t=<Zeit> ab; offline muss auch
+      // das aus dem Cache kommen, sonst verlangt die Seite die Laufzeitdateien von Hand (Fehler bis v1.4)
+      const hit = await c.match(req, { ignoreSearch: true });
       if (hit) return hit;
       const r = await fetch(req);
       // nur echte Dateien zwischenspeichern, keine HTML Hinweisseite

@@ -11,6 +11,7 @@ let bibliothekGeladen = false;
 let skripteBereit = false;
 let geomGeladen = false;
 let schluesselRoh = null;
+let geladenerStand = null;      // Skriptstand, der in /app/bestand liegt (app/skripte_<ID>.enc)
 const kacheln = new Map();      // URL -> Uint8Array (im Speicher, für weitere Läufe)
 
 const GEOM = [
@@ -121,7 +122,7 @@ await micropip.install(list(_wheels), deps=False)
   melde("motor", { sekunden: Math.round((performance.now() - t0) / 100) / 10 });
 }
 
-// ------------------------------------------------------------------ Skripte (verschlüsselt)
+// ------------------------------------------------------------------ Skripte (verschlüsselt, je Skriptstand ein Paket)
 async function entschluesseln(name, rohSchluessel) {
   const info = JSON.parse(new TextDecoder().decode(await holeBytes(`app/${name}.json`)));
   const daten = await holeBytes(`app/${name}.enc`);
@@ -130,18 +131,24 @@ async function entschluesseln(name, rohSchluessel) {
   catch { return null; }
 }
 
-async function skripteLaden(rohSchluessel) {
-  const e = await entschluesseln("skripte", rohSchluessel);
+// Lädt nur den gewählten Stand. Beim Umschalten wird /app/bestand geleert und neu bestückt, die Module des alten Stands
+// werden aus sys.modules entfernt. Jedes Paket hat eine eigene Adresse und liegt darum eigen im Offline Cache (sw.js).
+async function skripteLaden(rohSchluessel, stand) {
+  const e = await entschluesseln("skripte_" + stand, rohSchluessel);
   if (!e) return false;
   schluesselRoh = rohSchluessel;
   const zip = e.daten;
   py.FS.writeFile("/tmp/skripte.zip", zip);
   await py.runPythonAsync(`
 import zipfile, os, sys, io, runpy, subprocess, contextlib, types, shutil, json
+for _m in [m for m, v in list(sys.modules.items()) if str(getattr(v, "__file__", "") or "").startswith("/app/bestand/")]:
+    sys.modules.pop(_m, None)
+shutil.rmtree("/app/bestand", ignore_errors=True)
 os.makedirs("/app/bestand", exist_ok=True)
 zipfile.ZipFile("/tmp/skripte.zip").extractall("/app/bestand")
 os.remove("/tmp/skripte.zip")
-sys.path.insert(0, "/app/bestand")
+if "/app/bestand" not in sys.path: sys.path.insert(0, "/app/bestand")
+import importlib; importlib.invalidate_caches()
 import matplotlib; matplotlib.use("Agg")
 
 # Aufrufe "python skript.py ..." laufen im selben Python, nicht als eigener Prozess
@@ -162,7 +169,8 @@ def _run(cmd, capture_output=False, text=False, **kw):
     return types.SimpleNamespace(returncode=1, stdout="", stderr="im Browser nicht verfügbar: " + " ".join(map(str, cmd)))
 subprocess.run = _run
 
-EIGENE = ("bestand_lauf", "namen", "shp2ifc", "formstuecke", "log300", "gem001", "ifc106", "tin", "dtm_holen")
+EIGENE = ("bestand_lauf", "namen", "shp2ifc", "formstuecke", "armaturen_bib", "log300", "gem001", "ifc106", "tin",
+          "dtm_holen", "stollen", "schachtteile")
 def frisch():
     for m in EIGENE: sys.modules.pop(m, None)
     import bestand_lauf
@@ -176,7 +184,8 @@ def projekt_leeren():
         shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
 `);
   skripteBereit = true;
-  return { stand: e.info.stand || "", projekte: JSON.parse(py.runPython(`
+  geladenerStand = stand;
+  return { stand, standText: e.info.stand || "", projekte: JSON.parse(py.runPython(`
 p = "/app/bestand/projekte.json"
 open(p, encoding="utf-8").read() if os.path.exists(p) else "{}"
 `)) };
@@ -318,10 +327,16 @@ async function rechnen(dateien, o) {
   if (o.geom) await geomLaden();
   // Modellname nach Namenskonvention: Baunummer, Phase, Los aus dem Formular, Datum des Browsers (Europe/Zurich);
   // gebildet wird er in bestand_lauf.py mit namen.py, gleiche Regel wie die Vorschau in index.html
+  if (o.stand !== geladenerStand) throw new Error(`Skriptstand ${o.stand} ist nicht geladen (geladen: ${geladenerStand})`);
+  // Optionen ab Stand 10.11.2026, nur wenn der Stand sie kennt (index.html schickt sonst keine)
+  const x = o.neu || {};
   py.globals.set("_argv", ["bestand_lauf.py", "/projekt", "--projekt", o.projekt, "--ort", o.ort || o.projekt,
     "--baunr", o.baunr, "--phase", String(o.phase), "--los", o.los || "", "--datum", o.datum,
     "--messpunkte", o.messpunkte ? "ja" : "nein", "--formstuecke", o.formstuecke && bibliothekGeladen ? "ja" : "nein",
     ...(bibliothekGeladen ? ["--bibliothek", "/app/bibliothek"] : []),
+    ...(x.farben ? ["--farben", x.farben] : []), ...(x.taz_stand ? ["--taz-stand", x.taz_stand] : []),
+    ...(x.schema ? ["--schema", x.schema] : []), ...(x.armaturen ? ["--armaturen", x.armaturen] : []),
+    ...(x.hoehenausgleich === false ? ["--hoehenausgleich", "0"] : []),
     ...(o.weitere ? ["--weitere", o.weitere] : [])]);
   const rc = await py.runPythonAsync(`
 B = frisch(); B.P = B.Protokoll()
@@ -363,8 +378,12 @@ self.onmessage = async (ev) => {
   try {
     if (m.typ === "starten") await starten(m.runtime);
     else if (m.typ === "schluessel") {
-      const ok = await skripteLaden(m.schluessel);
+      const ok = await skripteLaden(m.schluessel, m.stand);
       melde(ok ? "entsperrt" : "gesperrt", ok || {});
+    }
+    else if (m.typ === "stand") {         // anderen Skriptstand laden (Schlüssel ist schon bekannt)
+      const ok = await skripteLaden(schluesselRoh, m.stand);
+      melde(ok ? "stand" : "fehler", ok || { text: `Skriptstand ${m.stand} lässt sich nicht entschlüsseln.` });
     }
     else if (m.typ === "bibliothek_hinterlegt") melde("bibliothek", { anzahl: await bibliothekHinterlegt(), hinterlegt: true });
     else if (m.typ === "bibliothek") melde("bibliothek", { anzahl: await bibliothekSetzen(m.daten) });
