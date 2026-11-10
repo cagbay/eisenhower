@@ -108,6 +108,32 @@
   .meta .mdot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; margin-right: 3px; }
   .del { flex: 0 0 auto; margin-top: 2px; background: none; border: 0; color: #d4d4d8; cursor: pointer; padding: 2px; opacity: 0; transition: opacity .12s, color .12s; }
   .task:hover .del, .donerow:hover .del { opacity: 1; }
+  /* Bilder an Aufgaben */
+  .att { flex: 0 0 auto; margin-top: 2px; background: none; border: 0; color: #c4c4c8; cursor: pointer; padding: 2px; opacity: 0; transition: opacity .12s, color .12s; }
+  .task:hover .att { opacity: 1; }
+  .att:hover { color: var(--accent); }
+  @media (hover: none) { .del, .att { opacity: .55; } }
+  .thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .thumb { width: 64px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: #f4f4f5; overflow: hidden; cursor: zoom-in; display: flex; align-items: center; justify-content: center; color: var(--faint); transition: border-color .12s, box-shadow .12s; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb:hover { border-color: #a1a1aa; box-shadow: 0 1px 5px rgba(0,0,0,.14); }
+  .thumb svg { width: 16px; height: 16px; }
+  .donerow .thumb { width: 48px; height: 34px; opacity: .75; }
+  .task.filedrop { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-bg); }
+  .lightbox { position: fixed; inset: 0; z-index: 60; background: rgba(24,24,27,.88); display: flex; flex-direction: column; }
+  .lb-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; color: #e4e4e7; font-size: 13px; }
+  .lb-info { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb-btn { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+  .lb-btn:hover { background: rgba(255,255,255,.2); }
+  .lb-btn.danger:hover { background: rgba(244,63,94,.4); border-color: rgba(244,63,94,.6); }
+  .lb-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 12px 16px; position: relative; }
+  .lb-stage img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; box-shadow: 0 8px 30px rgba(0,0,0,.45); background: #fff; }
+  .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 999px; border: 0; background: rgba(24,24,27,.6); color: #fff; font-size: 24px; line-height: 1; cursor: pointer; }
+  .lb-nav:hover { background: rgba(24,24,27,.85); }
+  .lb-nav.prev { left: 14px; }
+  .lb-nav.next { right: 14px; }
+  .lb-msg { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); color: #e4e4e7; font-size: 13px; background: rgba(0,0,0,.45); padding: 5px 10px; border-radius: 8px; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #18181b; color: #fff; font-size: 13px; padding: 9px 14px; border-radius: 10px; z-index: 70; box-shadow: 0 6px 20px rgba(0,0,0,.22); max-width: calc(100vw - 32px); }
   .del:hover { color: var(--rose); }
   .add { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
   .add input { flex: 1; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 14px; outline: none; }
@@ -438,11 +464,28 @@
   </main>
 </div>
 
+<!-- Bildansicht -->
+<div class="lightbox hidden" id="lightbox">
+  <div class="lb-bar">
+    <span class="lb-info" id="lbInfo"></span>
+    <button class="lb-btn danger" id="lbRemove">Bild entfernen</button>
+    <button class="lb-btn" id="lbClose" aria-label="Schliessen">✕</button>
+  </div>
+  <div class="lb-stage" id="lbStage">
+    <button class="lb-nav prev" id="lbPrev" aria-label="Vorheriges Bild">‹</button>
+    <img id="lbImg" alt="" />
+    <button class="lb-nav next" id="lbNext" aria-label="Nächstes Bild">›</button>
+    <span class="lb-msg hidden" id="lbMsg"></span>
+  </div>
+</div>
+<div class="toast hidden" id="toast"></div>
+<input type="file" id="imgPick" accept="image/*" multiple hidden />
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, onSnapshot, setDoc }
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, onSnapshot, setDoc, collection, getDoc, deleteDoc }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ====== Firebase-Konfiguration ====== */
@@ -607,7 +650,9 @@ onAuthStateChanged(auth, function (user) {
 
       document.getElementById("syncState").textContent = snap.metadata.fromCache ? "Offline – wird abgeglichen" : "Synchronisiert";
       render(); renderNotes();
+      if (!snap.metadata.fromCache) { docServerSeen = true; maybeCleanup(); }
     }, function (err) { console.error(err); });
+    startThumbs(user.uid);
 
     document.getElementById("who").textContent = user.displayName || user.email || "";
     var av = document.getElementById("avatar");
@@ -616,6 +661,7 @@ onAuthStateChanged(auth, function (user) {
     appScreen.classList.remove("hidden");
   } else {
     if (unsub) { unsub(); unsub = null; }
+    stopThumbs(); closeLightbox();
     docRef = null;
     store = { business: [], private: [], school: [] };
     noteStore = { business: [], private: [], school: [] }; noteEditingId = null;
@@ -626,9 +672,10 @@ onAuthStateChanged(auth, function (user) {
 });
 
 /* ---- Matrix: Daten ---- */
-function persist() {
+function persist(m) {
   if (!docRef) return;
-  var payload = {}; payload[state.mode] = store[state.mode];
+  m = m || state.mode;
+  var payload = {}; payload[m] = store[m];
   setDoc(docRef, payload, { merge: true }).catch(function (e) { console.error("Speichern fehlgeschlagen", e); });
 }
 function addTask(q, text) {
@@ -693,6 +740,270 @@ function setMode(m) {
   render();
 }
 
+/* ---- Matrix: Bilder an Aufgaben ---- */
+// Bilder liegen getrennt von den Aufgaben: users/{uid}/imgs/{id} (gross) und users/{uid}/thumbs/{id} (Vorschau).
+// Die Aufgabe selbst merkt sich nur die IDs (t.imgs), damit das Hauptdokument klein bleibt.
+var IMGICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>';
+var MAX_IMG = 900000;           // Zeichen pro Bild, deutlich unter der Firestore Grenze von 1 MB
+var thumbs = {}, fullCache = {}, thumbUnsub = null, currentUid = null;
+var thumbsReady = false, docServerSeen = false, cleanupDone = false;
+var toastTimer = null, pickTarget = null;
+var lb = { taskId: null, ids: [], idx: 0 };
+
+function toast(msg, ms) {
+  var el = document.getElementById("toast");
+  el.textContent = msg; el.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.add("hidden"); }, ms || 2500);
+}
+function imgDoc(kind, id) { return doc(db, "users", currentUid, kind, id); }
+function imageFiles(list) {
+  return Array.prototype.filter.call(list || [], function (f) { return f && /^image\//.test(f.type); });
+}
+function isFileDrag(e) {
+  var t = e.dataTransfer && e.dataTransfer.types;
+  if (!t) return false;
+  for (var i = 0; i < t.length; i++) if (t[i] === "Files") return true;
+  return false;
+}
+function loadImageEl(file) {
+  return new Promise(function (res, rej) {
+    var url = URL.createObjectURL(file), im = new Image();
+    im.onload = function () { res(im); };
+    im.onerror = function () { URL.revokeObjectURL(url); rej(new Error("Bild nicht lesbar")); };
+    im.src = url;
+  });
+}
+function drawScaled(im, maxSide) {
+  var w = im.naturalWidth, h = im.naturalHeight;
+  var k = Math.min(1, maxSide / Math.max(w, h));
+  var c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+  var g = c.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(im, 0, 0, c.width, c.height);
+  return c;
+}
+function encodeCanvas(c, q) {
+  var u = c.toDataURL("image/webp", q);
+  if (u.indexOf("data:image/webp") !== 0) u = c.toDataURL("image/jpeg", q);
+  return u;
+}
+async function processImage(file) {
+  var im = await loadImageEl(file);
+  try {
+    var side = 1800, q = 0.85, full = "";
+    for (var i = 0; i < 8; i++) {
+      full = encodeCanvas(drawScaled(im, side), q);
+      if (full.length <= MAX_IMG) break;
+      side = Math.round(side * 0.8); q = Math.max(0.5, q - 0.08);
+    }
+    if (full.length > MAX_IMG) throw new Error("Bild zu gross");
+    return { full: full, thumb: encodeCanvas(drawScaled(im, 240), 0.75), w: im.naturalWidth, h: im.naturalHeight };
+  } finally { URL.revokeObjectURL(im.src); }
+}
+function imgWriteError(e) {
+  console.error(e);
+  toast(e && e.code === "permission-denied"
+    ? "Bild nicht gespeichert: In Firebase fehlt noch die Regel für Bilder."
+    : "Bild konnte nicht gespeichert werden.", 7000);
+}
+async function storeImages(files) {
+  var ids = [];
+  for (var i = 0; i < files.length; i++) {
+    var r = await processImage(files[i]);
+    var id = "img-" + uid(), now = Date.now();
+    thumbs[id] = { data: r.thumb, createdAt: now };
+    fullCache[id] = r.full;
+    setDoc(imgDoc("imgs", id), { full: r.full, w: r.w, h: r.h, createdAt: now }).catch(imgWriteError);
+    setDoc(imgDoc("thumbs", id), { data: r.thumb, createdAt: now }).catch(imgWriteError);
+    ids.push(id);
+  }
+  return ids;
+}
+function findTask(id) {
+  var arr = store[state.mode] || [];
+  for (var i = 0; i < arr.length; i++) if (arr[i].id === id) return arr[i];
+  return null;
+}
+async function attachImages(taskId, list) {
+  var files = imageFiles(list);
+  if (!files.length || !docRef) return;
+  if (editingId === taskId) {
+    var ie = document.querySelector('input[data-edit-id="' + taskId + '"]');
+    commitEdit(taskId, ie ? ie.value : "");
+  }
+  var mode = state.mode;
+  toast(files.length > 1 ? "Bilder werden vorbereitet …" : "Bild wird vorbereitet …", 20000);
+  var ids;
+  try { ids = await storeImages(files); } catch (e) { console.error(e); toast("Bild konnte nicht gelesen werden.", 4000); return; }
+  if (!ids.length) return;
+  if (!store[mode].some(function (t) { return t.id === taskId; })) { toast("Aufgabe nicht mehr vorhanden.", 3000); return; }
+  if (mode === state.mode) pushHistory();
+  store[mode] = store[mode].map(function (t) {
+    return t.id === taskId ? Object.assign({}, t, { imgs: (t.imgs || []).concat(ids) }) : t;
+  });
+  persist(mode);
+  if (mode === state.mode) render();
+  toast(ids.length > 1 ? ids.length + " Bilder angehängt" : "Bild angehängt", 1800);
+}
+async function createTaskWithImages(q, text, list) {
+  var files = imageFiles(list);
+  if (!files.length || !docRef) return;
+  var mode = state.mode;
+  toast(files.length > 1 ? "Bilder werden vorbereitet …" : "Bild wird vorbereitet …", 20000);
+  var ids;
+  try { ids = await storeImages(files); } catch (e) { console.error(e); toast("Bild konnte nicht gelesen werden.", 4000); return; }
+  if (!ids.length) return;
+  var title = (text || "").trim();
+  var t = { id: uid(), text: title || "Screenshot", quadrant: q, done: false, createdAt: Date.now(), imgs: ids };
+  if (mode === state.mode) pushHistory();
+  store[mode] = store[mode].concat([t]);
+  persist(mode);
+  if (mode === state.mode) { if (!title) editingId = t.id; render(); }
+  toast(title ? "Aufgabe mit Bild erstellt" : "Aufgabe mit Bild erstellt, Titel eintippen und Enter", 3500);
+}
+function thumbsHtml(t) {
+  if (!t.imgs || !t.imgs.length) return "";
+  return '<span class="thumbs">' + t.imgs.map(function (id) {
+    var th = thumbs[id];
+    return '<button class="thumb" data-img="' + id + '" data-task="' + t.id + '" title="Bild vergrössern">' +
+      (th && th.data ? '<img src="' + th.data + '" alt="" draggable="false" />' : IMGICON) + '</button>';
+  }).join("") + '</span>';
+}
+
+function startThumbs(u) {
+  currentUid = u;
+  if (thumbUnsub) thumbUnsub();
+  thumbsReady = false; docServerSeen = false; cleanupDone = false;
+  thumbUnsub = onSnapshot(collection(db, "users", u, "thumbs"), function (snap) {
+    var m = {};
+    snap.forEach(function (d) { var x = d.data() || {}; m[d.id] = { data: x.data, createdAt: x.createdAt || 0 }; });
+    thumbs = m;
+    if (!snap.metadata.fromCache) { thumbsReady = true; maybeCleanup(); }
+    render();
+  }, function (err) {
+    console.error(err);
+    if (err && err.code === "permission-denied") toast("Bilder: In Firebase fehlt noch die Regel für Bilder.", 7000);
+  });
+}
+function stopThumbs() {
+  if (thumbUnsub) { thumbUnsub(); thumbUnsub = null; }
+  thumbs = {}; fullCache = {}; currentUid = null;
+  thumbsReady = false; docServerSeen = false; cleanupDone = false;
+}
+// Einmal pro Sitzung: Bilder entfernen, die seit mehr als einem Tag keiner Aufgabe mehr gehoeren
+function maybeCleanup() {
+  if (cleanupDone || !thumbsReady || !docServerSeen || !currentUid) return;
+  cleanupDone = true;
+  var used = {};
+  function mark(arr) { (arr || []).forEach(function (t) { (t.imgs || []).forEach(function (id) { used[id] = 1; }); }); }
+  ["business", "private", "school"].forEach(function (m) { mark(store[m]); });
+  history.forEach(function (h) { try { mark(JSON.parse(h)); } catch (e) {} });
+  var cutoff = Date.now() - 24 * 3600 * 1000;
+  Object.keys(thumbs).forEach(function (id) {
+    if (used[id] || (thumbs[id].createdAt || 0) > cutoff) return;
+    deleteDoc(imgDoc("thumbs", id)).catch(function () {});
+    deleteDoc(imgDoc("imgs", id)).catch(function () {});
+  });
+}
+
+async function loadFull(id) {
+  if (fullCache[id]) return fullCache[id];
+  var snap = await getDoc(imgDoc("imgs", id));
+  if (!snap.exists()) throw new Error("Bild fehlt");
+  fullCache[id] = snap.data().full;
+  return fullCache[id];
+}
+function openLightbox(taskId, imgId) {
+  var t = findTask(taskId);
+  if (!t || !t.imgs || !t.imgs.length) return;
+  lb.taskId = taskId; lb.ids = t.imgs.slice(); lb.idx = Math.max(0, lb.ids.indexOf(imgId));
+  document.getElementById("lightbox").classList.remove("hidden");
+  showLb();
+}
+function showLb() {
+  var id = lb.ids[lb.idx], t = findTask(lb.taskId);
+  if (!id || !t) { closeLightbox(); return; }
+  var n = lb.ids.length;
+  document.getElementById("lbInfo").textContent = t.text + (n > 1 ? "  ·  Bild " + (lb.idx + 1) + " von " + n : "");
+  document.getElementById("lbPrev").classList.toggle("hidden", n < 2);
+  document.getElementById("lbNext").classList.toggle("hidden", n < 2);
+  var img = document.getElementById("lbImg"), msg = document.getElementById("lbMsg");
+  var th = thumbs[id];
+  if (fullCache[id]) { img.src = fullCache[id]; msg.classList.add("hidden"); return; }
+  if (th && th.data) { img.src = th.data; img.classList.remove("hidden"); } else { img.removeAttribute("src"); img.classList.add("hidden"); }
+  msg.textContent = "Lädt …"; msg.classList.remove("hidden");
+  loadFull(id).then(function (src) {
+    if (lb.ids[lb.idx] !== id) return;
+    img.src = src; img.classList.remove("hidden"); msg.classList.add("hidden");
+  }).catch(function () {
+    if (lb.ids[lb.idx] !== id) return;
+    msg.textContent = "Bild ist nicht verfügbar (offline oder gelöscht)."; msg.classList.remove("hidden");
+  });
+}
+function lbStep(d) {
+  if (lb.ids.length < 2) return;
+  lb.idx = (lb.idx + d + lb.ids.length) % lb.ids.length;
+  showLb();
+}
+function closeLightbox() {
+  document.getElementById("lightbox").classList.add("hidden");
+  document.getElementById("lbImg").removeAttribute("src");
+  lb.taskId = null; lb.ids = []; lb.idx = 0;
+}
+function removeLbImage() {
+  var id = lb.ids[lb.idx], tid = lb.taskId;
+  if (!id || !findTask(tid)) return;
+  pushHistory();
+  store[state.mode] = store[state.mode].map(function (t) {
+    if (t.id !== tid) return t;
+    var rest = (t.imgs || []).filter(function (x) { return x !== id; });
+    var nt = Object.assign({}, t);
+    if (rest.length) nt.imgs = rest; else delete nt.imgs;
+    return nt;
+  });
+  render(); persist();
+  lb.ids.splice(lb.idx, 1);
+  if (!lb.ids.length) closeLightbox(); else { lb.idx = Math.min(lb.idx, lb.ids.length - 1); showLb(); }
+  toast("Bild entfernt, Rückgängig ist möglich", 2500);
+}
+document.getElementById("lbClose").addEventListener("click", closeLightbox);
+document.getElementById("lbRemove").addEventListener("click", removeLbImage);
+document.getElementById("lbPrev").addEventListener("click", function () { lbStep(-1); });
+document.getElementById("lbNext").addEventListener("click", function () { lbStep(1); });
+document.getElementById("lbStage").addEventListener("click", function (e) { if (e.target === e.currentTarget) closeLightbox(); });
+document.addEventListener("keydown", function (e) {
+  if (document.getElementById("lightbox").classList.contains("hidden")) return;
+  if (e.key === "Escape") closeLightbox();
+  else if (e.key === "ArrowLeft") lbStep(-1);
+  else if (e.key === "ArrowRight") lbStep(1);
+});
+document.getElementById("imgPick").addEventListener("change", function () {
+  var inp = document.getElementById("imgPick");
+  if (pickTarget) attachImages(pickTarget, inp.files);
+  pickTarget = null;
+});
+// Screenshot einfuegen: im Bearbeitungsfeld einer Aufgabe oder im Feld "Aufgabe hinzufuegen"
+document.addEventListener("paste", function (e) {
+  var t = e.target;
+  if (!t || !t.dataset || !(t.dataset.editId || t.dataset.add)) return;
+  var cd = e.clipboardData, files = imageFiles(cd && cd.files);
+  if (!files.length && cd && cd.items) {
+    for (var i = 0; i < cd.items.length; i++) {
+      var it = cd.items[i];
+      if (it.kind === "file" && /^image\//.test(it.type)) { var f = it.getAsFile(); if (f) files.push(f); }
+    }
+  }
+  if (!files.length) return;
+  e.preventDefault();
+  if (t.dataset.editId) attachImages(t.dataset.editId, files);
+  else { var txt = t.value; t.value = ""; createTaskWithImages(t.dataset.add, txt, files); }
+});
+// Dateien, die neben ein Ziel fallen, nicht vom Browser oeffnen lassen
+document.addEventListener("dragover", function (e) { if (isFileDrag(e)) e.preventDefault(); });
+document.addEventListener("drop", function (e) { if (isFileDrag(e)) e.preventDefault(); });
+
 /* ---- Matrix: Darstellung ---- */
 function render() {
   var tasks = store[state.mode] || [];
@@ -713,7 +1024,8 @@ function render() {
       return '<div class="task" draggable="' + (editing ? "false" : "true") + '" data-id="' + t.id + '">' +
         '<button class="box" data-act="toggle" data-id="' + t.id + '"></button>' +
         '<div class="body">' + bodyInner +
-        (stamp ? '<span class="stamp">' + stamp + '</span>' : '') + '</div>' +
+        (stamp ? '<span class="stamp">' + stamp + '</span>' : '') + thumbsHtml(t) + '</div>' +
+        '<button class="att" data-act="attach" data-id="' + t.id + '" title="Bild anhängen">' + IMGICON + '</button>' +
         '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button></div>';
     }).join("");
 
@@ -746,7 +1058,7 @@ function render() {
           '<span><span class="mdot" style="background:' + (q ? q.dot : "#a1a1aa") + '"></span>' + (q ? q.title : "—") + '</span>' +
           (fmt(t.createdAt) ? '<span>Erstellt ' + fmt(t.createdAt) + '</span>' : '') +
           (fmt(t.completedAt) ? '<span>Erledigt ' + fmt(t.completedAt) + '</span>' : '') +
-        '</span></div>' +
+        '</span>' + thumbsHtml(t) + '</div>' +
         '<button class="del" data-act="del" data-id="' + t.id + '">' + TRASH + '</button></div>';
     }).join("");
   }
@@ -768,6 +1080,7 @@ function wireDnD() {
     });
     el.addEventListener("dragend", function () { dragId = null; clearOver(); clearInsert(); });
     el.addEventListener("dragover", function (e) {
+      if (!dragId && isFileDrag(e)) { e.preventDefault(); e.stopPropagation(); clearOver(); el.classList.add("filedrop"); return; }
       if (!dragId || dragId === el.dataset.id) return;
       e.preventDefault(); e.stopPropagation();
       var r = el.getBoundingClientRect();
@@ -775,8 +1088,14 @@ function wireDnD() {
       clearInsert();
       el.style.boxShadow = before ? "inset 0 3px 0 -1px #059669" : "inset 0 -3px 0 -1px #059669";
     });
-    el.addEventListener("dragleave", function () { el.style.boxShadow = ""; });
+    el.addEventListener("dragleave", function () { el.style.boxShadow = ""; el.classList.remove("filedrop"); });
     el.addEventListener("drop", function (e) {
+      if (!dragId && isFileDrag(e)) {
+        e.preventDefault(); e.stopPropagation();
+        el.classList.remove("filedrop"); clearOver();
+        attachImages(el.dataset.id, e.dataTransfer.files);
+        return;
+      }
       if (!dragId) return;
       e.preventDefault(); e.stopPropagation();
       var r = el.getBoundingClientRect();
@@ -791,6 +1110,7 @@ function wireDnD() {
     el.addEventListener("dragleave", function (ev) { if (ev.target === el) resetQuad(el); });
     el.addEventListener("drop", function (e) {
       e.preventDefault();
+      if (!dragId && isFileDrag(e)) { clearOver(); createTaskWithImages(el.dataset.q, "", e.dataTransfer.files); return; }
       if (dragId) reorderTo(dragId, null, false, el.dataset.q);
       dragId = null; clearOver(); clearInsert();
     });
@@ -947,9 +1267,11 @@ document.getElementById("emptyTrash").addEventListener("click", emptyTrash);
 
 /* ---- globale Klick-/Tastatur-Events ---- */
 document.addEventListener("click", function (e) {
-  var btn = e.target.closest ? e.target.closest("[data-act],[data-addbtn],[data-mode],[data-notemode],[data-restore],[data-purge]") : null;
+  var btn = e.target.closest ? e.target.closest("[data-img],[data-act],[data-addbtn],[data-mode],[data-notemode],[data-restore],[data-purge]") : null;
   if (!btn) return;
-  if (btn.dataset.restore) restoreNote(btn.dataset.restore);
+  if (btn.dataset.img) openLightbox(btn.dataset.task, btn.dataset.img);
+  else if (btn.dataset.act === "attach") { pickTarget = btn.dataset.id; var ip = document.getElementById("imgPick"); ip.value = ""; ip.click(); }
+  else if (btn.dataset.restore) restoreNote(btn.dataset.restore);
   else if (btn.dataset.purge) purgeNote(btn.dataset.purge);
   else if (btn.dataset.act === "toggle") toggleDone(btn.dataset.id);
   else if (btn.dataset.act === "edit") startEdit(btn.dataset.id);
