@@ -108,6 +108,38 @@
   .meta .mdot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; margin-right: 3px; }
   .del { flex: 0 0 auto; margin-top: 2px; background: none; border: 0; color: #d4d4d8; cursor: pointer; padding: 2px; opacity: 0; transition: opacity .12s, color .12s; }
   .task:hover .del, .donerow:hover .del { opacity: 1; }
+  /* Suche ueber alle Bereiche */
+  .msearch { position: relative; margin-bottom: 16px; max-width: 560px; }
+  .msearch > svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--faint); pointer-events: none; }
+  .msearch input { width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 38px 10px 36px; font-size: 14px; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,.04); color: var(--ink); }
+  .msearch input:focus { border-color: #a1a1aa; }
+  .msearch input::-webkit-search-cancel-button, .msearch input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+  .msearch input::placeholder { color: var(--faint); }
+  .msearch-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: var(--faint); font-size: 15px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+  .msearch-clear:hover { color: var(--ink); background: #f4f4f5; }
+  .sresults { display: flex; flex-direction: column; gap: 18px; }
+  .sr-sum { font-size: 13px; color: var(--muted); }
+  .sr-sec h2 { font-size: 13px; font-weight: 600; color: #52525b; margin: 0 0 8px; }
+  .sr-sec h2 span { color: var(--faint); font-weight: 500; margin-left: 4px; }
+  .sr-list { display: flex; flex-direction: column; gap: 6px; }
+  .sr { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; cursor: pointer; font: inherit; color: inherit; }
+  .sr:hover { border-color: #a1a1aa; background: #fafafa; }
+  .sr.note { background: #fffbeb; border-color: #fde68a; }
+  .sr.note:hover { border-color: #fcd34d; }
+  .sr-main { flex: 1; min-width: 0; }
+  .sr-text { display: block; font-size: 14px; line-height: 1.35; word-break: break-word; }
+  .sr-text.done { color: var(--muted); text-decoration: line-through; }
+  .sr-snip { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; white-space: pre-wrap; word-break: break-word; }
+  .sr-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--faint); margin-top: 3px; }
+  .sr-meta .mdot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; margin-right: 4px; }
+  .sr-chip { background: #f4f4f5; color: #52525b; border-radius: 6px; padding: 1px 7px; font-weight: 500; }
+  .sr-chip.ok { background: var(--accent-bg); color: var(--accent); }
+  .sr-thumbs { display: flex; gap: 4px; flex: 0 0 auto; }
+  .sr-thumbs img { width: 40px; height: 28px; object-fit: cover; border-radius: 5px; border: 1px solid var(--line); display: block; }
+  .sr-go { color: var(--faint); font-size: 18px; flex: 0 0 auto; }
+  mark { background: #fde68a; color: inherit; border-radius: 3px; padding: 0 1px; }
+  .task.flash, .donerow.flash { animation: srflash 2.4s ease; }
+  @keyframes srflash { 0%, 60% { box-shadow: 0 0 0 3px rgba(5,150,105,.55); } 100% { box-shadow: 0 0 0 0 rgba(5,150,105,0); } }
   /* Bilder an Aufgaben */
   .att { flex: 0 0 auto; margin-top: 2px; background: none; border: 0; color: #c4c4c8; cursor: pointer; padding: 2px; opacity: 0; transition: opacity .12s, color .12s; }
   .task:hover .att { opacity: 1; }
@@ -310,8 +342,14 @@
           </div>
         </div>
       </div>
+      <div class="msearch">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="matrixSearch" placeholder="Alles durchsuchen: Aufgaben, Erledigte und Notizen" autocomplete="off" />
+        <button class="msearch-clear hidden" id="msearchClear" title="Suche leeren" aria-label="Suche leeren">✕</button>
+      </div>
       <div class="grid" id="grid"></div>
-      <div class="done-card">
+      <div class="sresults hidden" id="searchResults"></div>
+      <div class="done-card" id="doneCard">
         <div class="done-head" id="doneHead">
           <div class="left">
             <span class="chev" id="doneChev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
@@ -1004,6 +1042,167 @@ document.addEventListener("paste", function (e) {
 document.addEventListener("dragover", function (e) { if (isFileDrag(e)) e.preventDefault(); });
 document.addEventListener("drop", function (e) { if (isFileDrag(e)) e.preventDefault(); });
 
+/* ---- Suche ueber alle Bereiche (offen, erledigt, Notizen) ---- */
+var MODE_LABEL = { business: "Geschäftlich", private: "Privat", school: "Schule" };
+var MODES = ["business", "private", "school"];
+var searchQuery = "";
+// Vergleichsform: gross/klein egal, Akzente weg, ä = ae, ö = oe, ü = ue, ß = ss
+function foldMap(s) {
+  s = String(s || "");
+  var ch = [], st = [], en = [];
+  for (var i = 0; i < s.length; i++) {
+    var f = s[i].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    if (f === "ß") f = "ss";
+    for (var k = 0; k < f.length; k++) { ch.push(f[k]); st.push(i); en.push(i); }
+  }
+  var out = "", s2 = [], e2 = [];
+  for (var j = 0; j < ch.length; j++) {
+    var c = ch[j];
+    if ((c === "a" || c === "o" || c === "u") && ch[j + 1] === "e") { out += c; s2.push(st[j]); e2.push(en[j + 1]); j++; continue; }
+    out += c; s2.push(st[j]); e2.push(en[j]);
+  }
+  return { text: out, start: s2, end: e2 };
+}
+function fold(s) { return foldMap(s).text; }
+function searchTerms(q) { return fold(q).split(/\s+/).filter(Boolean); }
+function hl(s, terms) {
+  s = String(s || "");
+  if (!terms.length) return esc(s);
+  var fm = foldMap(s), marks = [];
+  terms.forEach(function (t) {
+    var from = 0, i;
+    while ((i = fm.text.indexOf(t, from)) >= 0) { for (var k = i; k < i + t.length; k++) for (var z = fm.start[k]; z <= fm.end[k]; z++) marks[z] = true; from = i + t.length; }
+  });
+  var out = "", open = false;
+  for (var j = 0; j < s.length; j++) {
+    if (marks[j] && !open) { out += "<mark>"; open = true; }
+    if (!marks[j] && open) { out += "</mark>"; open = false; }
+    out += esc(s[j]);
+  }
+  return out + (open ? "</mark>" : "");
+}
+function matchTask(t, terms) {
+  var hay = fold(t.text), dates = (fmt(t.createdAt) || "") + " " + (fmt(t.completedAt) || "");
+  return terms.every(function (x) { return hay.indexOf(x) >= 0 || (x.indexOf(".") >= 0 && dates.indexOf(x) >= 0); });
+}
+function matchNote(n, terms) {
+  var hay = fold((n.title || "") + "\n" + (n.text || ""));
+  return terms.every(function (x) { return hay.indexOf(x) >= 0; });
+}
+function noteSnippet(n, terms) {
+  var txt = n.text || "";
+  if (!txt) return "";
+  var f = foldMap(txt), pos = -1;
+  terms.forEach(function (x) { var i = f.text.indexOf(x); if (i >= 0 && (pos < 0 || i < pos)) pos = i; });
+  var at = pos >= 0 ? f.start[pos] : 0;
+  var a = Math.max(0, at - 50), b = Math.min(txt.length, a + 170);
+  return (a > 0 ? "… " : "") + hl(txt.slice(a, b), terms) + (b < txt.length ? " …" : "");
+}
+function srThumbs(t) {
+  if (!t.imgs || !t.imgs.length) return "";
+  var imgs = t.imgs.slice(0, 3).map(function (id) { var th = thumbs[id]; return th && th.data ? '<img src="' + th.data + '" alt="" />' : ""; }).join("");
+  return imgs ? '<span class="sr-thumbs">' + imgs + '</span>' : "";
+}
+function srTask(r, terms) {
+  var t = r.t, q = QMAP[t.quadrant] || { dot: "#a1a1aa", title: "" };
+  return '<button class="sr" data-sr="task" data-mode="' + r.m + '" data-id="' + t.id + '" data-done="' + (t.done ? 1 : 0) + '">' +
+    '<span class="sr-main"><span class="sr-text' + (t.done ? ' done' : '') + '">' + hl(t.text, terms) + '</span>' +
+    '<span class="sr-meta">' +
+      '<span class="sr-chip' + (t.done ? ' ok' : '') + '">' + (t.done ? 'Erledigt' : 'Offen') + '</span>' +
+      '<span class="sr-chip">' + MODE_LABEL[r.m] + '</span>' +
+      '<span><span class="mdot" style="background:' + q.dot + '"></span>' + q.title + '</span>' +
+      (fmt(t.createdAt) ? '<span>Erstellt ' + fmt(t.createdAt) + '</span>' : '') +
+      (t.done && fmt(t.completedAt) ? '<span>Erledigt ' + fmt(t.completedAt) + '</span>' : '') +
+    '</span></span>' + srThumbs(t) + '<span class="sr-go">›</span></button>';
+}
+function srNote(r, terms) {
+  var n = r.n;
+  return '<button class="sr note" data-sr="note" data-mode="' + r.m + '" data-id="' + n.id + '">' +
+    '<span class="sr-main"><span class="sr-text"><b>' + hl(n.title && n.title.trim() ? n.title : "Ohne Titel", terms) + '</b></span>' +
+    '<span class="sr-snip">' + noteSnippet(n, terms) + '</span>' +
+    '<span class="sr-meta"><span class="sr-chip">Notiz</span><span class="sr-chip">' + MODE_LABEL[r.m] + '</span>' +
+      (fmt(n.updatedAt || n.createdAt) ? '<span>' + fmt(n.updatedAt || n.createdAt) + '</span>' : '') +
+    '</span></span><span class="sr-go">›</span></button>';
+}
+function renderSearch() {
+  var box = document.getElementById("searchResults");
+  var active = searchQuery.trim().length > 0;
+  document.getElementById("grid").classList.toggle("hidden", active);
+  document.getElementById("doneCard").classList.toggle("hidden", active);
+  document.getElementById("msearchClear").classList.toggle("hidden", !active);
+  box.classList.toggle("hidden", !active);
+  if (!active) { box.innerHTML = ""; return; }
+  var terms = searchTerms(searchQuery), open = [], done = [], notes = [];
+  var qOrder = {}; QUADRANTS.forEach(function (q, i) { qOrder[q.id] = i; });
+  MODES.forEach(function (m, mi) {
+    (store[m] || []).forEach(function (t) { if (matchTask(t, terms)) (t.done ? done : open).push({ m: m, mi: mi, t: t }); });
+    ((noteStore && noteStore[m]) || []).forEach(function (n) { if (!n.deleted && matchNote(n, terms)) notes.push({ m: m, n: n }); });
+  });
+  open.sort(function (a, b) { return (a.mi - b.mi) || ((qOrder[a.t.quadrant] || 0) - (qOrder[b.t.quadrant] || 0)); });
+  done.sort(function (a, b) { return (b.t.completedAt || b.t.createdAt || 0) - (a.t.completedAt || a.t.createdAt || 0); });
+  notes.sort(function (a, b) { return (b.n.updatedAt || 0) - (a.n.updatedAt || 0); });
+  var total = open.length + done.length + notes.length;
+  function sec(title, arr, fn) {
+    if (!arr.length) return "";
+    return '<div class="sr-sec"><h2>' + title + '<span>' + arr.length + '</span></h2><div class="sr-list">' +
+      arr.map(function (r) { return fn(r, terms); }).join("") + '</div></div>';
+  }
+  box.innerHTML = '<div class="sr-sum">' + (total
+      ? total + ' Treffer, ein Klick springt zum Eintrag.'
+      : 'Keine Treffer für «' + esc(searchQuery.trim()) + '».') + '</div>' +
+    sec("Offene Aufgaben", open, srTask) + sec("Erledigt", done, srTask) + sec("Notizen", notes, srNote);
+}
+function clearSearch() {
+  searchQuery = "";
+  document.getElementById("matrixSearch").value = "";
+  renderSearch();
+}
+function jumpToTask(m, id, done) {
+  clearSearch();
+  if (m !== state.mode) setMode(m);
+  if (done && doneCollapsed) {
+    doneCollapsed = false;
+    try { localStorage.setItem("doneCollapsed", "0"); } catch (e) {}
+    render();
+  }
+  var el = document.querySelector('#grid .task[data-id="' + id + '"]');
+  if (!el) { var b = document.querySelector('#doneList [data-id="' + id + '"]'); el = b && b.closest(".donerow"); }
+  if (!el) return;
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  el.classList.add("flash");
+  setTimeout(function () { el.classList.remove("flash"); }, 2400);
+}
+function jumpToNote(m, id) {
+  clearSearch();
+  setTool("notes");
+  if (noteMode !== m) setNoteMode(m);
+  openNote(id);
+}
+(function () {
+  var ms = document.getElementById("matrixSearch");
+  ms.addEventListener("input", function () { searchQuery = ms.value; renderSearch(); });
+  ms.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { e.preventDefault(); clearSearch(); ms.blur(); }
+    else if (e.key === "Enter") { var first = document.querySelector("#searchResults .sr"); if (first) { e.preventDefault(); first.click(); } }
+  });
+  document.getElementById("msearchClear").addEventListener("click", function () { clearSearch(); ms.focus(); });
+  document.getElementById("searchResults").addEventListener("click", function (e) {
+    var r = e.target.closest ? e.target.closest(".sr") : null;
+    if (!r) return;
+    if (r.dataset.sr === "note") jumpToNote(r.dataset.mode, r.dataset.id);
+    else jumpToTask(r.dataset.mode, r.dataset.id, r.dataset.done === "1");
+  });
+  // Taste / springt ins Suchfeld der Matrix
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (document.getElementById("panel-matrix").classList.contains("hidden")) return;
+    if (!document.getElementById("lightbox").classList.contains("hidden")) return;
+    e.preventDefault(); ms.focus();
+  });
+})();
+
 /* ---- Matrix: Darstellung ---- */
 function render() {
   var tasks = store[state.mode] || [];
@@ -1067,6 +1266,7 @@ function render() {
   if (doneCollapsed) dl.classList.add("hidden");
 
   wireDnD();
+  renderSearch();
   if (editingId) { var ie = document.querySelector('input[data-edit-id="' + editingId + '"]'); if (ie) { ie.focus(); ie.select(); } }
 }
 
@@ -1224,6 +1424,7 @@ function renderNotes() {
   if (trashCollapsed) tl.classList.add("hidden");
 
   updateUndoBtnNotes();
+  renderSearch();
 }
 function setNoteMode(m) {
   if (m === noteMode) return;
