@@ -1,5 +1,5 @@
-const CACHE = "eisenhower-v23";
-const ASSETS = ["./", "./index.html", "./manifest.json"];
+const CACHE = "eisenhower-v24";
+const ASSETS = ["./", "./index.html", "./manifest.json", "./favicon.svg", "./favicon-32.png", "./apple-touch-icon-v2.png", "./icon-192-v2.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
