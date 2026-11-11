@@ -2,7 +2,7 @@
 // ihre Caches behalten und dieser Cache von ihnen nicht gelöscht wird. Version ändert mit jedem Build.
 // Ab v1.5 je Skriptstand ein Paket app/skripte_<ID>.enc: jedes hat eine eigene Adresse und liegt darum eigen im Cache,
 // nach einmaligem Laden lässt sich offline zwischen den Ständen umschalten.
-const CACHE = "pl-bestand-v1.6-261111";
+const CACHE = "pl-bestand-v1.7-261111b";
 const FEST = /\/(py|wheels)\//;   // Python Laufzeit und Pakete: unveränderlich, sofort aus dem Cache
 
 self.addEventListener("install", () => self.skipWaiting());
