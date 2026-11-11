@@ -1,8 +1,5 @@
 [
- {"id": "2026-11-10", "anzeige": "10.11.2026 (neuester)", "datum": "2026-11-10",
-  "optionen": ["farben", "taz_stand", "schema", "armaturen", "hoehenausgleich"], "neuester": true,
-  "beschreibung": "Albisriederstrasse: Armaturen und Hydranten aus der Bauteilbibliothek, TAZ Farben, IFC 4.3, Höhenausgleich"},
- {"id": "2026-10-16", "anzeige": "16.10.2026 (bisher)", "datum": "2026-10-16",
-  "optionen": [], "neuester": false,
-  "beschreibung": "Skriptpaket bis 10.11.2026 (mit Namenskonvention 05.11.2026), unverändert"}
+ {"id": "2026-11-11", "anzeige": "11.11.2026 (neuester)", "datum": "2026-11-11", "optionen": ["farben", "taz_stand", "schema", "armaturen", "hoehenausgleich"], "neuester": true, "beschreibung": "15033 Los Ost: Klappenantrieb nach DXF, Reduzierflansch am Nennweitenwechsel, Hydrant mit Standrohr auf dem GIS Punkt, Hydranten und Garnituren in Stufen (Modell rund 30 % kleiner)"},
+ {"id": "2026-11-10", "anzeige": "10.11.2026", "datum": "2026-11-10", "optionen": ["farben", "taz_stand", "schema", "armaturen", "hoehenausgleich"], "neuester": false, "beschreibung": "Albisriederstrasse: Armaturen und Hydranten aus der Bauteilbibliothek, TAZ Farben, IFC 4.3, Höhenausgleich"},
+ {"id": "2026-10-16", "anzeige": "16.10.2026 (bisher)", "datum": "2026-10-16", "optionen": [], "neuester": false, "beschreibung": "Skriptpaket bis 10.11.2026 (mit Namenskonvention 05.11.2026), unverändert"}
 ]
