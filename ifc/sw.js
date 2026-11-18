@@ -1,6 +1,6 @@
 // Offline cache for the IFC Viewer web app. Version changes with every build.
 const PREFIX = 'ifc-viewer-v'; // own caches only: the viewer and the AR prototype share the address
-const CACHE = PREFIX + '9.9-261116-1556';
+const CACHE = PREFIX + '10.0-261118-1825';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192-v2.png', './icons/icon-512-v2.png', './icons/apple-touch-icon-v2.png', './icons/favicon-32-v2.png'];
 
 self.addEventListener('install', (e) => {
